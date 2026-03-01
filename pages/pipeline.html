@@ -641,7 +641,7 @@
       const res = await fetch('/api/deploy/active', { cache: 'no-store' });
       if (!res.ok) return;
       const d = await res.json();
-      if (d && d.status === 'active' && !_activeRun) {
+      if (d && d.status === 'active' && !_activeRun && !_ftJob) {
         const banner = document.getElementById('active-banner');
         banner.style.display = 'flex';
         setText('bp-id',      d.id ? d.id.slice(0, 8) : '--');
@@ -660,6 +660,90 @@
   }
   pollActiveDeploy();
   setInterval(pollActiveDeploy, 10000);
+
+  // ── Finetune job status polling ──────────────────────────────────────────
+  let _ftJob = null, _ftContainerId = null;
+
+  async function pollFinetuneLog() {
+    if (!_ftContainerId || _activeRun) return;
+    try {
+      const res = await fetch('/api/containers/' + _ftContainerId + '/logs?tail=3', { cache: 'no-store' });
+      if (!res.ok) return;
+      const d = await res.json();
+      const raw = d.logs || '';
+      // Parse last PROGRESS line: chunk X/Y: Z%  [epoch A/B  step C/D  loss=L  lr=LR]
+      const lines = raw.trim().split('\n');
+      let m = null;
+      for (let i = lines.length - 1; i >= 0; i--) {
+        const re = /PROGRESS chunk (\d+)\/(\d+): (\d+)%\s+\[epoch (\d+)\/(\d+)\s+step (\d+)\/(\d+)\s+loss=([\d.]+)/;
+        m = lines[i].match(re);
+        if (m) break;
+      }
+      if (!m) return;
+      const pct = m[3], epoch = m[4], totalEpoch = m[5], step = m[6], totalStep = m[7], loss = m[8];
+      // Live metric in FINE-TUNE stage card
+      const lv = document.getElementById('live-train');
+      if (lv) lv.textContent = 'e' + epoch + '/' + totalEpoch + ' s' + step + '/' + totalStep + ' loss=' + loss;
+      // Banner fields
+      document.getElementById('bp-iter').textContent  = 'EPOCH ' + epoch + ' / ' + totalEpoch;
+      document.getElementById('bp-score').textContent = 'LOSS ' + parseFloat(loss).toFixed(4);
+      document.getElementById('bp-prog').style.width  = pct + '%';
+      // Highlight FINE-TUNE stage and show banner
+      if (!_activeRun) {
+        document.getElementById('active-banner').style.display = 'flex';
+        setStage(1);
+      }
+    } catch(e) { /* soft fail */ }
+  }
+
+  async function pollFinetune() {
+    if (_activeRun) return;
+    try {
+      const res = await fetch('/api/finetune/', { cache: 'no-store' });
+      if (!res.ok) return;
+      const jobs = await res.json();
+      const running = jobs.find(function(j) { return j.status === 'running'; });
+      if (!running) {
+        if (_ftJob) {
+          _ftJob = null; _ftContainerId = null;
+          document.getElementById('active-banner').style.display = 'none';
+          STAGES.forEach(function(id) { document.getElementById(id).className = 'stage-card'; });
+          ARROWS.forEach(function(id)  { document.getElementById(id).className = 'stage-conn'; });
+          STAGES.forEach(function(id) {
+            const lv = document.getElementById('live-' + id.replace('st-',''));
+            if (lv) lv.textContent = '—';
+          });
+        }
+        return;
+      }
+      _ftJob = running;
+      // Resolve container ID if not yet known
+      if (!_ftContainerId) {
+        const cr = await fetch('/api/containers/', { cache: 'no-store' });
+        if (cr.ok) {
+          const containers = await cr.json();
+          const ft = containers.find(function(c) { return c.name === 'donut-finetune' && c.status === 'running'; });
+          if (ft) _ftContainerId = ft.id;
+        }
+      }
+      // Static banner fields
+      const shortId    = running.id.slice(0, 8);
+      const modelShort = (running.base_model || '').split('/').pop() || running.id;
+      const banner = document.getElementById('active-banner');
+      banner.style.display = 'flex';
+      document.getElementById('bp-id').textContent      = shortId;
+      document.getElementById('bp-model').textContent   = modelShort;
+      document.getElementById('bp-backend').textContent = 'TRAIN';
+      document.getElementById('bp-node').textContent    = 'DGX-SPARK';
+      // Immediately fetch a live log line
+      await pollFinetuneLog();
+    } catch(e) { /* soft fail */ }
+  }
+
+  pollFinetune();
+  setInterval(pollFinetune,    15000);
+  setInterval(pollFinetuneLog,  5000);
+
 
   function launchPipeline() {
     if (_activeRun) { logLine('Pipeline already running', 'warn'); return; }

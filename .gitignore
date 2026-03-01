@@ -66,3 +66,12 @@ out/
 
 # ── Docker local overrides ────────────
 docker-compose.override.yml
+
+# ── Rust / Cargo ──────────────────────
+target/
+*.pdb
+
+# ── Test recordings ───────────────────
+*.wav
+*.raw
+test_recording*
