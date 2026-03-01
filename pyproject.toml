@@ -1,3 +1,6 @@
 [tool.pytest.ini_options]
 # src/ layout: add src to pythonpath so test imports find src/orchestrator etc.
+# importmode=importlib avoids pytest prepending tests/ to sys.path, which would
+# shadow src/orchestrator with tests/orchestrator when __init__.py exists there.
 pythonpath = ["src"]
+addopts = "--import-mode=importlib"
