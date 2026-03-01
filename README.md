@@ -130,4 +130,57 @@ Key decisions are documented in [`docs/adr/`](docs/adr/):
 
 ---
 
-*BOB-AI // BCOM-C v0.5*
+## Bob Voice Assistant (Feature Branch)
+
+This fork adds **Bob**, a multimodal voice assistant that will integrate into the BCOM-C dashboard as a web feature.
+
+**Core loop:** User audio → VAD-gated buffer → GPU STT → Dialog orchestrator (Anthropic Claude) → TTS (ElevenLabs) → output to phone/mic/speaker.
+
+### Modalities
+- Voice over phone via Twilio ConversationRelay
+- Voice over local mic (desktop/browser/WebRTC)
+- Vision via webcam snapshots → Anthropic multimodal (Claude 3)
+
+### Modes
+- **Phone agent** — handles inbound/outbound calls, human handoff
+- **Companion** — desktop/home lab voice assistant
+- **Ops** — tools, MCP, system control (future)
+
+### Bob Directory Structure
+
+```
+src/
+├── orchestrator/     # Session state, routing, barge-in, tool calls
+├── stt-service/      # GPU STT + VAD (FasterWhisper/Silero)
+├── tts-adapter/      # ElevenLabs streaming TTS client
+├── telephony/        # Twilio Voice + ConversationRelay
+├── desktop-client/   # Local mic/speaker capture and playback
+├── vision/           # Webcam capture + Anthropic multimodal
+├── hooks/            # Integration hooks
+└── services/         # Shared service utilities
+```
+
+Additional directories: `infra/`, `scripts/`, `tests/`, `experiments/`, `docs/research/`, `docs/steering/`
+
+### Bob Tech Stack
+
+| Layer | Technology |
+|---|---|
+| Backend | Python (FastAPI / aiohttp) |
+| STT | FasterWhisper / WhisperX on DGX/4070 via WebSocket/gRPC |
+| TTS | ElevenLabs streaming API |
+| Telephony | Twilio ConversationRelay |
+| Vision | OpenCV + Anthropic multimodal endpoint |
+| LLM | Anthropic Claude (Sonnet/Haiku) streaming API |
+| Orchestrator LLM | 70B model on DGX Spark (http://10.0.0.69:9010) |
+
+### Implementation Phases
+
+1. **Phase 1 — Local prototype:** GPU STT + VAD server, CLI mic → STT → Anthropic → ElevenLabs → speakers
+2. **Phase 2 — Telephony:** Twilio ConversationRelay integration, session store by call SID
+3. **Phase 3 — Vision + tools:** Webcam capture, Anthropic multimodal, tool schemas
+4. **Phase 4 — Hardening:** Latency targets (TTFT < 500ms), logging, metrics, safety guardrails
+
+---
+
+*BOB-AI // BCOM-C-Feature v0.6*
