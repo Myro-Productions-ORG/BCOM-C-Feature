@@ -5,6 +5,7 @@
 //! and emits transcripts as newline-delimited JSON on stdout.
 
 mod audio;
+mod control;
 mod stt;
 mod vad;
 
