@@ -66,3 +66,8 @@ out/
 
 # ── Docker local overrides ────────────
 docker-compose.override.yml
+
+# ── Test recordings ───────────────────
+*.wav
+*.raw
+test_recording*

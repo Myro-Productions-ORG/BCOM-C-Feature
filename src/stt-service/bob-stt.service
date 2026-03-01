@@ -1,0 +1,31 @@
+[Unit]
+Description=Bob STT Service - FasterWhisper + Silero VAD
+After=network.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=myroproductions
+WorkingDirectory=/home/myroproductions/bob-stt-service
+ExecStart=/home/myroproductions/bob-stt-service/venv/bin/python server.py
+Restart=always
+RestartSec=5
+
+# Environment
+Environment=PYTHONUNBUFFERED=1
+
+# GPU access
+Environment=NVIDIA_VISIBLE_DEVICES=all
+Environment=LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu:/usr/local/cuda/lib64
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=bob-stt
+
+# Hardening
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
