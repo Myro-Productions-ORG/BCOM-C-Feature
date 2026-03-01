@@ -4,3 +4,4 @@
 # shadow src/orchestrator with tests/orchestrator when __init__.py exists there.
 pythonpath = ["src"]
 addopts = "--import-mode=importlib"
+asyncio_mode = "auto"
