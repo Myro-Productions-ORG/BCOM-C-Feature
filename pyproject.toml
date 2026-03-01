@@ -1,0 +1,3 @@
+[tool.pytest.ini_options]
+# src/ layout: add src to pythonpath so test imports find src/orchestrator etc.
+pythonpath = ["src"]
