@@ -5,6 +5,12 @@ from unittest.mock import AsyncMock, MagicMock, patch
 from orchestrator.providers.types import TTSProvider, STTProvider
 
 
+async def _async_iter(items):
+    """Helper: yield items from a list as an async iterator."""
+    for item in items:
+        yield item
+
+
 class FakeTTS(TTSProvider):
     def __init__(self, chunks=None):
         self.chunks = chunks or [b"\x00\x01" * 100]
@@ -36,14 +42,15 @@ async def test_session_transitions_through_states():
          patch("orchestrator.session.AudioPlayer") as MockPlayer:
 
         # Claude returns a simple response
-        mock_stream = MagicMock()
-        mock_stream.__enter__ = MagicMock(return_value=mock_stream)
-        mock_stream.__exit__ = MagicMock(return_value=False)
-        mock_stream.__iter__ = MagicMock(return_value=iter([
+        events = [
             MagicMock(type="content_block_delta",
                       delta=MagicMock(type="text_delta", text="Hello there."))
-        ]))
-        mock_anthropic.Anthropic.return_value.messages.stream.return_value = mock_stream
+        ]
+        mock_stream = AsyncMock()
+        mock_stream.__aenter__ = AsyncMock(return_value=mock_stream)
+        mock_stream.__aexit__ = AsyncMock(return_value=False)
+        mock_stream.__aiter__ = MagicMock(return_value=_async_iter(events))
+        mock_anthropic.AsyncAnthropic.return_value.messages.stream.return_value = mock_stream
 
         MockPlayer.return_value.play = AsyncMock()
 
@@ -78,14 +85,15 @@ async def test_session_sends_tts_start_stop_signals():
     with patch("orchestrator.session.anthropic") as mock_anthropic, \
          patch("orchestrator.session.AudioPlayer") as MockPlayer:
 
-        mock_stream = MagicMock()
-        mock_stream.__enter__ = MagicMock(return_value=mock_stream)
-        mock_stream.__exit__ = MagicMock(return_value=False)
-        mock_stream.__iter__ = MagicMock(return_value=iter([
+        events = [
             MagicMock(type="content_block_delta",
                       delta=MagicMock(type="text_delta", text="Hi."))
-        ]))
-        mock_anthropic.Anthropic.return_value.messages.stream.return_value = mock_stream
+        ]
+        mock_stream = AsyncMock()
+        mock_stream.__aenter__ = AsyncMock(return_value=mock_stream)
+        mock_stream.__aexit__ = AsyncMock(return_value=False)
+        mock_stream.__aiter__ = MagicMock(return_value=_async_iter(events))
+        mock_anthropic.AsyncAnthropic.return_value.messages.stream.return_value = mock_stream
         MockPlayer.return_value.play = AsyncMock()
 
         from orchestrator.session import Session

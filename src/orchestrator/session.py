@@ -1,6 +1,5 @@
 """Session state machine: IDLE → LISTENING → THINKING → SPEAKING → loop."""
 
-import asyncio
 import enum
 import logging
 from typing import Callable, Awaitable
@@ -39,10 +38,9 @@ class Session:
         self._model = model
         self._temperature = temperature
         self._player = AudioPlayer(sample_rate=sample_rate, device=output_device)
-        self._client = anthropic.Anthropic()
+        self._client = anthropic.AsyncAnthropic()
         self._history: list[dict] = []
         self._state = SessionState.IDLE
-        self._barge_in = asyncio.Event()
         self._on_state_change: Callable[[SessionState], None] | None = None
         self._max_turns: int | None = None  # None = run forever
 
@@ -56,7 +54,6 @@ class Session:
         """Called by the control WebSocket handler when the client sends barge_in."""
         logger.info("Barge-in received — stopping TTS")
         self._player.stop()
-        self._barge_in.set()
 
     async def run(self) -> None:
         await self._stt.connect()
@@ -69,7 +66,6 @@ class Session:
                     break
 
                 # --- LISTENING ---
-                self._barge_in.clear()
                 self._set_state(SessionState.LISTENING)
                 transcript = await self._stt.receive_transcript()
                 if not transcript:
@@ -95,16 +91,16 @@ class Session:
             await self._stt.close()
 
     async def _call_claude(self) -> str:
-        """Call Claude with streaming and return the full response text."""
+        """Call Claude with async streaming and return the full response text."""
         full_text = ""
-        with self._client.messages.stream(
+        async with self._client.messages.stream(
             model=self._model,
             max_tokens=1024,
             temperature=self._temperature,
             system=self._system_prompt,
             messages=self._history,
         ) as stream:
-            for event in stream:
+            async for event in stream:
                 if (
                     event.type == "content_block_delta"
                     and event.delta.type == "text_delta"

@@ -23,7 +23,7 @@ class AudioPlayer:
     async def play(self, stream: AsyncIterator[bytes]) -> None:
         """Stream PCM chunks to the output device. Returns when done or stop() called."""
         self._stop_event.clear()
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
 
         with sd.OutputStream(
             samplerate=self._sample_rate,

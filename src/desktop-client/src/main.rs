@@ -117,7 +117,7 @@ async fn run_listen(
     let ctrl_url = orchestrator_url.to_string();
     tokio::spawn(async move {
         if let Err(e) = control::run_control_channel(&ctrl_url, mode_tx, barge_in_rx).await {
-            warn!("Control channel error: {}", e);
+            warn!("Control channel failed: {} — barge-in will not function this session. Restart to reconnect.", e);
         }
     });
 

@@ -6,7 +6,7 @@
 
 use anyhow::Result;
 use futures_util::{SinkExt, StreamExt};
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use tokio::sync::watch;
 use tokio_tungstenite::{connect_async, tungstenite::Message};
 use tracing::{info, warn};
@@ -31,11 +31,6 @@ impl ControlMode {
 
 #[derive(Deserialize)]
 struct ControlMessage {
-    r#type: String,
-}
-
-#[derive(Serialize)]
-struct OutboundMessage {
     r#type: String,
 }
 

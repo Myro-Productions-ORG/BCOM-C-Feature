@@ -17,7 +17,7 @@ async def test_stt_receive_transcript_returns_final_text():
     mock_ws.recv = AsyncMock(side_effect=messages)
     mock_ws.send = AsyncMock()
 
-    with patch("orchestrator.providers.stt_bob.websockets.connect", return_value=mock_ws):
+    with patch("orchestrator.providers.stt_bob.websockets.connect", new_callable=AsyncMock, return_value=mock_ws):
         from orchestrator.providers.stt_bob import BobSTTProvider
         provider = BobSTTProvider(url="ws://127.0.0.1:8765/ws/transcribe")
         await provider.connect()

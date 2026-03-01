@@ -16,7 +16,7 @@ class BobSTTProvider(STTProvider):
         self._ws = None
 
     async def connect(self) -> None:
-        self._ws = websockets.connect(self._url)
+        self._ws = await websockets.connect(self._url)
         # Wait for 'ready'
         msg = await self._ws.recv()
         data = json.loads(msg)
