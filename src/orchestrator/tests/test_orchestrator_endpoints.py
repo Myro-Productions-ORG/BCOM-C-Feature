@@ -24,27 +24,37 @@ def client():
 def test_settings_endpoint_updates_temperature(client):
     import orchestrator.main as m
     mock_session = MagicMock()
-    mock_session._temperature = 0.8
-    mock_session._max_tokens = 512
-    mock_session._model = "claude-haiku-4-5-20251001"
+    mock_session.get_params.return_value = {
+        "temperature": 0.8,
+        "max_tokens": 512,
+        "model": "claude-haiku-4-5-20251001",
+    }
     m.session = mock_session
 
     resp = client.post("/settings", json={"temperature": 0.8})
     assert resp.status_code == 200
     mock_session.set_params.assert_called_once_with(temperature=0.8, max_tokens=None, model=None)
+    data = resp.json()
+    assert data["temperature"] == 0.8
+    assert data["max_tokens"] == 512
+    assert data["model"] == "claude-haiku-4-5-20251001"
 
 
 def test_settings_endpoint_partial(client):
     import orchestrator.main as m
     mock_session = MagicMock()
-    mock_session._temperature = 0.6
-    mock_session._max_tokens = 256
-    mock_session._model = "claude-haiku-4-5-20251001"
+    mock_session.get_params.return_value = {
+        "temperature": 0.6,
+        "max_tokens": 256,
+        "model": "claude-haiku-4-5-20251001",
+    }
     m.session = mock_session
 
     resp = client.post("/settings", json={"max_tokens": 256})
     assert resp.status_code == 200
     mock_session.set_params.assert_called_once_with(temperature=None, max_tokens=256, model=None)
+    data = resp.json()
+    assert data["max_tokens"] == 256
 
 
 def test_clear_memory_endpoint(client):
