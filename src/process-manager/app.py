@@ -1025,7 +1025,5 @@ async def index():
 
 
 if __name__ == "__main__":
-    import webbrowser
     print("Bob Control starting at http://localhost:7766")
-    webbrowser.open("http://localhost:7766")
     uvicorn.run(app, host="127.0.0.1", port=7766, log_level="warning")
