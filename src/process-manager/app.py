@@ -217,6 +217,28 @@ async def stream_logs(svc_id: str):
                                       "X-Accel-Buffering": "no"})
 
 
+@app.post("/api/settings")
+async def proxy_settings(body: dict):
+    """Proxy settings update to the running orchestrator."""
+    try:
+        async with httpx.AsyncClient(timeout=3.0) as client:
+            r = await client.post("http://127.0.0.1:8766/settings", json=body)
+            return r.json()
+    except Exception as e:
+        return {"error": str(e)}
+
+
+@app.post("/api/clear-memory")
+async def proxy_clear_memory():
+    """Proxy clear-memory to the running orchestrator."""
+    try:
+        async with httpx.AsyncClient(timeout=3.0) as client:
+            r = await client.post("http://127.0.0.1:8766/clear-memory")
+            return r.json()
+    except Exception as e:
+        return {"error": str(e)}
+
+
 HTML = r"""<!DOCTYPE html>
 <html lang="en">
 <head>
