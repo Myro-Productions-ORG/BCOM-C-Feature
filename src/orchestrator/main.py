@@ -6,7 +6,8 @@ import logging
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
+from pydantic import BaseModel, Field
 import uvicorn
 
 from .config import settings
@@ -20,9 +21,10 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Load Bob's system prompt from steering doc
-_STEERING = Path(__file__).resolve().parents[2] / "docs/steering/bob-personality-and-voice.md"
-SYSTEM_PROMPT = _STEERING.read_text() if _STEERING.exists() else "You are Bob, a warm and caring assistant."
+# Load Bob's clean system prompt
+_PROMPT_FILE = Path(__file__).resolve().parents[2] / "docs/steering/bob-system-prompt.txt"
+_FALLBACK_PROMPT = "You are Bob. You're calm, warm, and direct. You keep responses concise."
+SYSTEM_PROMPT = _PROMPT_FILE.read_text().strip() if _PROMPT_FILE.exists() else _FALLBACK_PROMPT
 
 # Active control WebSocket clients
 _control_clients: set[WebSocket] = set()
@@ -91,6 +93,32 @@ async def toggle_active():
 async def health():
     state = session._state.value if session else "not_started"
     return {"status": "ok", "session_state": state}
+
+
+class SettingsUpdate(BaseModel):
+    temperature: float | None = Field(None, ge=0.0, le=1.0)
+    max_tokens: int | None = Field(None, ge=1, le=4096)
+    model: str | None = None
+
+
+@app.post("/settings")
+async def update_settings(body: SettingsUpdate):
+    if session is None:
+        raise HTTPException(status_code=503, detail="Session not started")
+    session.set_params(
+        temperature=body.temperature,
+        max_tokens=body.max_tokens,
+        model=body.model,
+    )
+    return session.get_params()
+
+
+@app.post("/clear-memory")
+async def clear_memory():
+    if session is None:
+        raise HTTPException(status_code=503, detail="Session not started")
+    session.clear_history()
+    return {"cleared": True}
 
 
 @app.websocket("/ws/control")

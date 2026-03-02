@@ -38,6 +38,7 @@ class Session:
         self._system_prompt = system_prompt
         self._model = model
         self._temperature = temperature
+        self._max_tokens: int = 512
         self._player = AudioPlayer(sample_rate=sample_rate, device=output_device)
         self._client = anthropic.AsyncAnthropic(api_key=anthropic_api_key)
         self._history: list[dict] = []
@@ -55,6 +56,37 @@ class Session:
         """Called by the control WebSocket handler when the client sends barge_in."""
         logger.info("Barge-in received — stopping TTS")
         self._player.stop()
+
+    def set_params(
+        self,
+        temperature: float | None = None,
+        max_tokens: int | None = None,
+        model: str | None = None,
+    ) -> None:
+        """Update runtime parameters without restarting the session."""
+        if temperature is not None:
+            self._temperature = temperature
+        if max_tokens is not None:
+            self._max_tokens = max_tokens
+        if model is not None:
+            self._model = model
+        logger.info(
+            "Session params updated: model=%s temperature=%s max_tokens=%s",
+            self._model, self._temperature, self._max_tokens,
+        )
+
+    def get_params(self) -> dict:
+        """Return current runtime parameters."""
+        return {
+            "temperature": self._temperature,
+            "max_tokens": self._max_tokens,
+            "model": self._model,
+        }
+
+    def clear_history(self) -> None:
+        """Reset conversation history."""
+        self._history = []
+        logger.info("Conversation history cleared")
 
     async def run(self) -> None:
         await self._stt.connect()
@@ -106,7 +138,7 @@ class Session:
         full_text = ""
         async with self._client.messages.stream(
             model=self._model,
-            max_tokens=1024,
+            max_tokens=self._max_tokens,
             temperature=self._temperature,
             system=self._system_prompt,
             messages=self._history,

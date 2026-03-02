@@ -217,6 +217,32 @@ async def stream_logs(svc_id: str):
                                       "X-Accel-Buffering": "no"})
 
 
+@app.post("/api/settings")
+async def proxy_settings(body: dict):
+    """Proxy settings update to the running orchestrator."""
+    try:
+        async with httpx.AsyncClient(timeout=3.0) as client:
+            r = await client.post("http://127.0.0.1:8766/settings", json=body)
+            if r.status_code >= 400:
+                return {"error": f"Orchestrator error {r.status_code}: {r.text}"}
+            return r.json()
+    except Exception as e:
+        return {"error": str(e)}
+
+
+@app.post("/api/clear-memory")
+async def proxy_clear_memory():
+    """Proxy clear-memory to the running orchestrator."""
+    try:
+        async with httpx.AsyncClient(timeout=3.0) as client:
+            r = await client.post("http://127.0.0.1:8766/clear-memory")
+            if r.status_code >= 400:
+                return {"error": f"Orchestrator error {r.status_code}: {r.text}"}
+            return r.json()
+    except Exception as e:
+        return {"error": str(e)}
+
+
 HTML = r"""<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -348,7 +374,7 @@ h1 .sub {
 main {
   padding: 28px 32px;
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr 1fr 280px;
   gap: 20px;
   max-width: 1400px;
   margin: 0 auto;
@@ -516,6 +542,120 @@ main {
   pointer-events: none;
   z-index: 1;
 }
+/* ─── SETTINGS PANEL ─────────────────────────────────────────── */
+.settings-panel {
+  grid-column: 3;
+  grid-row: 2 / -1;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  padding: 20px 18px;
+  gap: 18px;
+}
+
+.settings-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 18px;
+  letter-spacing: 0.12em;
+  color: var(--text);
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 10px;
+}
+
+.settings-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.settings-label {
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.settings-val {
+  font-family: 'IBM Plex Mono', monospace;
+  color: var(--amber);
+  font-size: 11px;
+}
+
+.settings-slider {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 3px;
+  background: var(--border2);
+  outline: none;
+}
+.settings-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--amber);
+  cursor: pointer;
+}
+
+.settings-select {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  background: var(--surface2);
+  color: var(--text);
+  border: 1px solid var(--border);
+  padding: 7px 10px;
+  width: 100%;
+  cursor: pointer;
+  letter-spacing: 0.05em;
+}
+.settings-select:focus { outline: none; border-color: var(--amber); }
+
+.settings-apply {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  background: transparent;
+  border: 1px solid var(--amber);
+  color: var(--amber);
+  padding: 10px;
+  cursor: pointer;
+  width: 100%;
+  transition: background 0.15s;
+}
+.settings-apply:hover { background: var(--amber); color: #000; }
+.settings-apply:active { opacity: 0.8; }
+
+.settings-clear {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  background: transparent;
+  border: 1px solid #333;
+  color: var(--text-dim);
+  padding: 8px;
+  cursor: pointer;
+  width: 100%;
+  transition: all 0.15s;
+  margin-top: auto;
+}
+.settings-clear:hover { border-color: #f87171; color: #f87171; }
+
+.settings-status {
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  text-align: center;
+  min-height: 14px;
+}
+.settings-status.ok { color: var(--green); }
+.settings-status.err { color: #f87171; }
 </style>
 </head>
 <body>
@@ -594,7 +734,7 @@ main {
     </div>
   </div>
   <!-- Hotkey daemon card — spans full width -->
-  <div class="card" id="card-hotkey" style="grid-column:1/-1">
+  <div class="card" id="card-hotkey" style="grid-column:1/3">
     <div class="card-head">
       <div class="svc-meta">
         <div class="svc-led" id="svcled-hotkey"></div>
@@ -612,6 +752,36 @@ main {
     <div class="log-wrap">
       <div class="log-pane" id="log-hotkey" style="height:120px"><div class="log-empty">No output yet.</div></div>
     </div>
+  </div>
+  <!-- SETTINGS PANEL -->
+  <div class="settings-panel">
+    <div class="settings-title">BOB SETTINGS</div>
+
+    <div class="settings-group">
+      <div class="settings-label">Temperature <span class="settings-val" id="temp-val">0.6</span></div>
+      <input class="settings-slider" id="temp-slider" type="range" min="0" max="1" step="0.05" value="0.6"
+             oninput="document.getElementById('temp-val').textContent = parseFloat(this.value).toFixed(2)">
+    </div>
+
+    <div class="settings-group">
+      <div class="settings-label">Max Tokens <span class="settings-val" id="tokens-val">512</span></div>
+      <input class="settings-slider" id="tokens-slider" type="range" min="128" max="2048" step="64" value="512"
+             oninput="document.getElementById('tokens-val').textContent = this.value">
+    </div>
+
+    <div class="settings-group">
+      <div class="settings-label">Model</div>
+      <select class="settings-select" id="model-select">
+        <option value="claude-haiku-4-5-20251001" selected>Haiku 4.5 — fast</option>
+        <option value="claude-sonnet-4-6">Sonnet 4.6 — balanced</option>
+        <option value="claude-opus-4-6">Opus 4.6 — flagship</option>
+      </select>
+    </div>
+
+    <button class="settings-apply" onclick="applySettings()">Apply Settings</button>
+    <div class="settings-status" id="settings-status"></div>
+
+    <button class="settings-clear" onclick="clearMemory()">Clear Memory</button>
   </div>
 </main>
 
@@ -790,6 +960,50 @@ async function setDevice(device) {
     headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({ device }),
   });
+}
+
+async function applySettings() {
+  const temperature = parseFloat(document.getElementById('temp-slider').value);
+  const max_tokens = parseInt(document.getElementById('tokens-slider').value);
+  const model = document.getElementById('model-select').value;
+  const statusEl = document.getElementById('settings-status');
+
+  statusEl.className = 'settings-status';
+  statusEl.textContent = 'Applying\u2026';
+
+  try {
+    const r = await fetch('/api/settings', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ temperature, max_tokens, model }),
+    });
+    const d = await r.json();
+    if (d.error) throw new Error(d.error);
+    statusEl.className = 'settings-status ok';
+    statusEl.textContent = 'Applied';
+    setTimeout(() => { statusEl.textContent = ''; }, 2500);
+  } catch (e) {
+    statusEl.className = 'settings-status err';
+    statusEl.textContent = 'Failed \u2014 is orchestrator running?';
+  }
+}
+
+async function clearMemory() {
+  const statusEl = document.getElementById('settings-status');
+  statusEl.className = 'settings-status';
+  statusEl.textContent = 'Clearing\u2026';
+
+  try {
+    const r = await fetch('/api/clear-memory', { method: 'POST' });
+    const d = await r.json();
+    if (d.error) throw new Error(d.error);
+    statusEl.className = 'settings-status ok';
+    statusEl.textContent = 'Memory cleared';
+    setTimeout(() => { statusEl.textContent = ''; }, 2500);
+  } catch (e) {
+    statusEl.className = 'settings-status err';
+    statusEl.textContent = 'Failed \u2014 is orchestrator running?';
+  }
 }
 
 // Init
