@@ -152,8 +152,9 @@ async fn run_listen(
                     match event {
                         VadEvent::SpeechStart { pre_roll } => {
                             let mode = *mode_rx.borrow();
-                            if mode == control::ControlMode::BargeIn {
-                                info!("Barge-in detected (TTS active)");
+                            let active = *active_rx.borrow();
+                            if mode == control::ControlMode::BargeIn && active {
+                                info!("Barge-in detected (TTS active, Bob active)");
                                 let _ = barge_in_tx.send(());
                             }
                             info!("Speech detected");
