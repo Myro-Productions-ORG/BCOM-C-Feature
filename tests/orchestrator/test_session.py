@@ -67,6 +67,7 @@ async def test_session_transitions_through_states():
             system_prompt="You are Bob.",
             model="claude-sonnet-4-6",
             temperature=0.6,
+            anthropic_api_key="test-key",
         )
 
         session._on_state_change = lambda s: states_seen.append(s)
@@ -103,7 +104,8 @@ async def test_session_sends_tts_start_stop_signals():
         notify = AsyncMock()
 
         session = Session(stt=stt, tts=tts, notify=notify,
-                          system_prompt="You are Bob.", model="m", temperature=0.6)
+                          system_prompt="You are Bob.", model="m", temperature=0.6,
+                          anthropic_api_key="test-key")
         session._max_turns = 1
         await session.run()
 

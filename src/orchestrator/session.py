@@ -28,6 +28,7 @@ class Session:
         system_prompt: str,
         model: str,
         temperature: float,
+        anthropic_api_key: str,
         output_device: str = "",
         sample_rate: int = 22050,
     ):
@@ -38,7 +39,7 @@ class Session:
         self._model = model
         self._temperature = temperature
         self._player = AudioPlayer(sample_rate=sample_rate, device=output_device)
-        self._client = anthropic.AsyncAnthropic()
+        self._client = anthropic.AsyncAnthropic(api_key=anthropic_api_key)
         self._history: list[dict] = []
         self._state = SessionState.IDLE
         self._on_state_change: Callable[[SessionState], None] | None = None
@@ -76,7 +77,12 @@ class Session:
 
                 # --- THINKING ---
                 self._set_state(SessionState.THINKING)
-                response_text = await self._call_claude()
+                try:
+                    response_text = await self._call_claude()
+                except Exception as llm_err:
+                    logger.error("Claude error: %s", llm_err)
+                    self._set_state(SessionState.LISTENING)
+                    continue
                 self._history.append({"role": "assistant", "content": response_text})
                 logger.info("Bob: %s", response_text)
 

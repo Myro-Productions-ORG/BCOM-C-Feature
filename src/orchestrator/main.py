@@ -61,6 +61,7 @@ async def lifespan(app: FastAPI):
         system_prompt=SYSTEM_PROMPT,
         model=settings.claude_model,
         temperature=settings.claude_temperature,
+        anthropic_api_key=settings.anthropic_api_key,
         output_device=settings.output_device,
     )
     _session_task = asyncio.create_task(session.run())
