@@ -223,6 +223,8 @@ async def proxy_settings(body: dict):
     try:
         async with httpx.AsyncClient(timeout=3.0) as client:
             r = await client.post("http://127.0.0.1:8766/settings", json=body)
+            if r.status_code >= 400:
+                return {"error": f"Orchestrator error {r.status_code}: {r.text}"}
             return r.json()
     except Exception as e:
         return {"error": str(e)}
@@ -234,6 +236,8 @@ async def proxy_clear_memory():
     try:
         async with httpx.AsyncClient(timeout=3.0) as client:
             r = await client.post("http://127.0.0.1:8766/clear-memory")
+            if r.status_code >= 400:
+                return {"error": f"Orchestrator error {r.status_code}: {r.text}"}
             return r.json()
     except Exception as e:
         return {"error": str(e)}
