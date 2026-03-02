@@ -38,10 +38,12 @@ struct ControlMessage {
 /// - Connects to the orchestrator control WebSocket
 /// - Updates `mode_tx` when TTS state changes
 /// - Sends barge_in when `barge_in_rx` fires
+/// - Forwards transcripts to the orchestrator when `transcript_rx` fires
 pub async fn run_control_channel(
     url: &str,
     mode_tx: watch::Sender<ControlMode>,
     mut barge_in_rx: tokio::sync::mpsc::UnboundedReceiver<()>,
+    mut transcript_rx: tokio::sync::mpsc::UnboundedReceiver<String>,
 ) -> Result<()> {
     let (ws_stream, _) = connect_async(url).await?;
     let (mut write, mut read) = ws_stream.split();
@@ -78,6 +80,11 @@ pub async fn run_control_channel(
                 let msg = serde_json::json!({"type": "barge_in"}).to_string();
                 write.send(Message::Text(msg.into())).await?;
                 info!("Sent barge_in to orchestrator");
+            }
+            Some(text) = transcript_rx.recv() => {
+                let msg = serde_json::json!({"type": "transcript", "text": text}).to_string();
+                write.send(Message::Text(msg.into())).await?;
+                info!("Forwarded transcript to orchestrator");
             }
             else => break,
         }

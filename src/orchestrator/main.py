@@ -11,7 +11,7 @@ import uvicorn
 
 from .config import settings
 from .session import Session, SessionState
-from .providers.stt_bob import BobSTTProvider
+from .providers.stt_queue import QueueSTTProvider
 from .providers.tts_elevenlabs import ElevenLabsTTSProvider
 
 logging.basicConfig(
@@ -26,6 +26,9 @@ SYSTEM_PROMPT = _STEERING.read_text() if _STEERING.exists() else "You are Bob, a
 
 # Active control WebSocket clients
 _control_clients: set[WebSocket] = set()
+
+# Transcripts forwarded from the Rust client via control channel
+_transcript_queue: asyncio.Queue[str] = asyncio.Queue()
 
 session: Session | None = None
 _session_task: asyncio.Task | None = None
@@ -46,7 +49,7 @@ async def _notify_clients(msg_type: str) -> None:
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     global session, _session_task
-    stt = BobSTTProvider(url=settings.stt_url)
+    stt = QueueSTTProvider(queue=_transcript_queue)
     tts = ElevenLabsTTSProvider(
         api_key=settings.elevenlabs_api_key,
         voice_id=settings.elevenlabs_voice_id,
@@ -87,7 +90,12 @@ async def control_ws(ws: WebSocket):
             text = await ws.receive_text()
             msg = json.loads(text)
             msg_type = msg.get("type", "")
-            if msg_type == "barge_in" and session:
+            if msg_type == "transcript":
+                text = msg.get("text", "").strip()
+                if text:
+                    logger.info("Transcript queued: %s", text)
+                    await _transcript_queue.put(text)
+            elif msg_type == "barge_in" and session:
                 logger.info("Barge-in signal received from desktop client")
                 session.signal_barge_in()
             elif msg_type == "ping":
