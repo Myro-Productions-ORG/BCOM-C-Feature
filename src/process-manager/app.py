@@ -44,6 +44,18 @@ _procs: dict[str, subprocess.Popen | None] = {k: None for k in SERVICES}
 _logs: dict[str, deque] = {k: deque(maxlen=400) for k in SERVICES}
 _subscribers: dict[str, list[asyncio.Queue]] = {k: [] for k in SERVICES}
 _loop: asyncio.AbstractEventLoop | None = None
+_mic_device: str = ""  # empty = system default
+
+
+def _list_input_devices() -> list[str]:
+    result = subprocess.run([RUST_BIN, "devices"], capture_output=True, text=True)
+    devices = []
+    for line in result.stdout.splitlines():
+        line = line.strip()
+        if line and not line.startswith("Available"):
+            name = line.removesuffix(" (default)").strip()
+            devices.append(name)
+    return devices
 
 
 def _kill_port(port: int) -> None:
@@ -76,8 +88,21 @@ async def startup():
     _loop = asyncio.get_running_loop()
 
 
+@app.get("/api/devices")
+async def list_devices():
+    return {"devices": _list_input_devices()}
+
+
+@app.post("/api/set-device")
+async def set_device(body: dict):
+    global _mic_device
+    _mic_device = body.get("device", "")
+    return {"device": _mic_device}
+
+
 @app.post("/api/start/{svc_id}")
 async def start_service(svc_id: str):
+    global _mic_device
     if svc_id not in SERVICES:
         return {"error": "unknown service"}
     cfg = SERVICES[svc_id]
@@ -94,8 +119,12 @@ async def start_service(svc_id: str):
     env = os.environ.copy()
     env.update(cfg["env_extra"])
 
+    cmd = list(cfg["cmd"])
+    if svc_id == "client" and _mic_device:
+        cmd += ["--device", _mic_device]
+
     new_proc = subprocess.Popen(
-        cfg["cmd"],
+        cmd,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         cwd=str(REPO_ROOT),
@@ -533,6 +562,9 @@ main {
         </div>
       </div>
       <div class="card-actions">
+        <select id="mic-select" onchange="setDevice(this.value)" style="font-family:'IBM Plex Mono',monospace;font-size:10px;background:#111;color:#888;border:1px solid #2a2a2a;padding:6px 8px;cursor:pointer;letter-spacing:0.05em;max-width:160px;">
+          <option value="">Default mic</option>
+        </select>
         <button class="btn btn-green" onclick="startService('client')">&#9654; Start</button>
         <button class="btn btn-red" onclick="stopService('client')">&#9632; Stop</button>
       </div>
@@ -664,10 +696,40 @@ async function stopAll() {
   await stopService('orchestrator');
 }
 
+async function loadDevices() {
+  try {
+    const r = await fetch('/api/devices');
+    const { devices } = await r.json();
+    const sel = document.getElementById('mic-select');
+    // Keep default option, add the rest
+    while (sel.options.length > 1) sel.remove(1);
+    devices.forEach(d => {
+      const opt = document.createElement('option');
+      opt.value = d;
+      opt.textContent = d;
+      // Pre-select Meta glasses if present
+      if (d.toLowerCase().includes('rb meta') || d.toLowerCase().includes('meta')) {
+        opt.selected = true;
+        setDevice(d);
+      }
+      sel.appendChild(opt);
+    });
+  } catch {}
+}
+
+async function setDevice(device) {
+  await fetch('/api/set-device', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ device }),
+  });
+}
+
 // Init
 SERVICES.forEach(connectLogs);
 pollStatus();
 updateSttHealth();
+loadDevices();
 setInterval(pollStatus, 3000);
 setInterval(updateSttHealth, 10000);
 </script>
