@@ -545,7 +545,7 @@ main {
 /* ─── SETTINGS PANEL ─────────────────────────────────────────── */
 .settings-panel {
   grid-column: 3;
-  grid-row: 2 / span 3;
+  grid-row: 2 / -1;
   background: var(--surface);
   border: 1px solid var(--border);
   display: flex;
