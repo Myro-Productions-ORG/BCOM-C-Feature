@@ -12,6 +12,7 @@ async def test_elevenlabs_streams_chunks():
             yield c
 
     mock_response = MagicMock()
+    mock_response.status_code = 200
     mock_response.aiter_bytes = fake_aiter_bytes
     mock_response.raise_for_status = MagicMock()
 
@@ -36,7 +37,9 @@ async def test_elevenlabs_streams_chunks():
 @pytest.mark.asyncio
 async def test_elevenlabs_raises_on_error():
     """HTTP error from ElevenLabs propagates as exception."""
-    mock_response = MagicMock()
+    mock_response = AsyncMock()
+    mock_response.status_code = 401
+    mock_response.aread = AsyncMock(return_value=b'{"detail":{"message":"Unauthorized"}}')
     mock_response.raise_for_status = MagicMock(side_effect=httpx.HTTPStatusError(
         "401", request=MagicMock(), response=MagicMock(status_code=401)
     ))

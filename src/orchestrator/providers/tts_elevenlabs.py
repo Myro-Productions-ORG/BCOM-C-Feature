@@ -39,7 +39,16 @@ class ElevenLabsTTSProvider(TTSProvider):
 
         async with httpx.AsyncClient(timeout=30.0) as client:
             async with client.stream("POST", url, params=params, headers=headers, json=payload) as response:
-                response.raise_for_status()
+                if response.status_code != 200:
+                    body = await response.aread()
+                    logger.error(
+                        "ElevenLabs %d — key: %s...%s — body: %s",
+                        response.status_code,
+                        self._api_key[:12],
+                        self._api_key[-4:],
+                        body.decode("utf-8", errors="replace")[:300],
+                    )
+                    response.raise_for_status()
                 logger.info("ElevenLabs TTS stream started")
                 async for chunk in response.aiter_bytes():
                     if chunk:
