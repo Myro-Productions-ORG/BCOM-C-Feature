@@ -6,7 +6,8 @@ import logging
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
+from pydantic import BaseModel, Field
 import uvicorn
 
 from .config import settings
@@ -92,6 +93,36 @@ async def toggle_active():
 async def health():
     state = session._state.value if session else "not_started"
     return {"status": "ok", "session_state": state}
+
+
+class SettingsUpdate(BaseModel):
+    temperature: float | None = Field(None, ge=0.0, le=1.0)
+    max_tokens: int | None = Field(None, ge=1, le=4096)
+    model: str | None = None
+
+
+@app.post("/settings")
+async def update_settings(body: SettingsUpdate):
+    if session is None:
+        raise HTTPException(status_code=503, detail="Session not started")
+    session.set_params(
+        temperature=body.temperature,
+        max_tokens=body.max_tokens,
+        model=body.model,
+    )
+    return {
+        "temperature": session._temperature,
+        "max_tokens": session._max_tokens,
+        "model": session._model,
+    }
+
+
+@app.post("/clear-memory")
+async def clear_memory():
+    if session is None:
+        raise HTTPException(status_code=503, detail="Session not started")
+    session.clear_history()
+    return {"cleared": True}
 
 
 @app.websocket("/ws/control")
