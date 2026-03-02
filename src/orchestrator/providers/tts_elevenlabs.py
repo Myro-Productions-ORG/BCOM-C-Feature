@@ -25,10 +25,10 @@ class ElevenLabsTTSProvider(TTSProvider):
             "xi-api-key": self._api_key,
             "Content-Type": "application/json",
         }
+        params = {"output_format": f"pcm_{self._sample_rate}"}
         payload = {
             "text": text,
             "model_id": "eleven_turbo_v2",
-            "output_format": f"pcm_{self._sample_rate}",
             "voice_settings": {
                 "stability": 0.60,
                 "similarity_boost": 0.75,
@@ -38,7 +38,7 @@ class ElevenLabsTTSProvider(TTSProvider):
         }
 
         async with httpx.AsyncClient(timeout=30.0) as client:
-            async with client.stream("POST", url, headers=headers, json=payload) as response:
+            async with client.stream("POST", url, params=params, headers=headers, json=payload) as response:
                 response.raise_for_status()
                 logger.info("ElevenLabs TTS stream started")
                 async for chunk in response.aiter_bytes():
