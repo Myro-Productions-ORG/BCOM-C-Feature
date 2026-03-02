@@ -110,11 +110,7 @@ async def update_settings(body: SettingsUpdate):
         max_tokens=body.max_tokens,
         model=body.model,
     )
-    return {
-        "temperature": session._temperature,
-        "max_tokens": session._max_tokens,
-        "model": session._model,
-    }
+    return session.get_params()
 
 
 @app.post("/clear-memory")

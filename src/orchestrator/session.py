@@ -75,6 +75,14 @@ class Session:
             self._model, self._temperature, self._max_tokens,
         )
 
+    def get_params(self) -> dict:
+        """Return current runtime parameters."""
+        return {
+            "temperature": self._temperature,
+            "max_tokens": self._max_tokens,
+            "model": self._model,
+        }
+
     def clear_history(self) -> None:
         """Reset conversation history."""
         self._history = []
