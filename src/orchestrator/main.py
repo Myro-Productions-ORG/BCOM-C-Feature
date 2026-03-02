@@ -80,6 +80,13 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="Bob Orchestrator", lifespan=lifespan)
 
 
+@app.post("/toggle-active")
+async def toggle_active():
+    """Broadcast toggle_active to all connected desktop clients (glasses tap)."""
+    await _notify_clients("toggle_active")
+    return {"status": "toggled"}
+
+
 @app.get("/health")
 async def health():
     state = session._state.value if session else "not_started"

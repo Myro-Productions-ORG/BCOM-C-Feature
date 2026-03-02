@@ -18,6 +18,8 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 VENV_PYTHON = str(REPO_ROOT / "src/orchestrator/venv/bin/python")
 RUST_BIN = str(REPO_ROOT / "src/desktop-client/target/release/bob-desktop-client")
 
+HOTKEY_DAEMON = str(REPO_ROOT / "src/hotkey-daemon/daemon.py")
+
 SERVICES = {
     "orchestrator": {
         "label": "Orchestrator",
@@ -35,6 +37,12 @@ SERVICES = {
             "--stt-endpoint", "ws://127.0.0.1:8765/ws/transcribe",
             "--orchestrator-url", "ws://127.0.0.1:8766/ws/control",
         ],
+        "env_extra": {},
+        "port": None,
+    },
+    "hotkey": {
+        "label": "Hotkey Daemon",
+        "cmd": [VENV_PYTHON, HOTKEY_DAEMON],
         "env_extra": {},
         "port": None,
     },
@@ -159,6 +167,17 @@ async def get_status():
         running = proc is not None and proc.poll() is None
         result[svc_id] = {"running": running, "pid": proc.pid if running else None}
     return result
+
+
+@app.post("/api/toggle-active")
+async def toggle_active():
+    """Forward tap event to orchestrator which broadcasts to desktop client."""
+    try:
+        async with httpx.AsyncClient(timeout=2.0) as client:
+            await client.post("http://127.0.0.1:8766/toggle-active")
+        return {"status": "ok"}
+    except Exception as e:
+        return {"status": "error", "detail": str(e)}
 
 
 @app.get("/api/stt-health")
@@ -509,6 +528,7 @@ main {
     </div>
   </div>
   <div class="global-btns">
+    <button class="btn btn-amber" id="tap-btn" onclick="tapBob()" style="min-width:90px">&#9679; STANDBY</button>
     <button class="btn btn-amber" onclick="startAll()">&#9654; Start All</button>
     <button class="btn btn-muted" onclick="stopAll()">&#9632; Stop All</button>
   </div>
@@ -573,10 +593,30 @@ main {
       <div class="log-pane" id="log-client"><div class="log-empty">No output yet.</div></div>
     </div>
   </div>
+  <!-- Hotkey daemon card — spans full width -->
+  <div class="card" id="card-hotkey" style="grid-column:1/-1">
+    <div class="card-head">
+      <div class="svc-meta">
+        <div class="svc-led" id="svcled-hotkey"></div>
+        <div>
+          <div class="svc-name">Hotkey Daemon</div>
+          <div class="svc-state" id="state-hotkey">Stopped <span class="svc-pid" id="pid-hotkey"></span></div>
+        </div>
+      </div>
+      <div class="card-actions">
+        <span style="font-size:10px;color:#555;letter-spacing:0.08em;padding-right:8px">META GLASSES TAP → TOGGLE ACTIVE</span>
+        <button class="btn btn-green" onclick="startService('hotkey')">&#9654; Start</button>
+        <button class="btn btn-red" onclick="stopService('hotkey')">&#9632; Stop</button>
+      </div>
+    </div>
+    <div class="log-wrap">
+      <div class="log-pane" id="log-hotkey" style="height:120px"><div class="log-empty">No output yet.</div></div>
+    </div>
+  </div>
 </main>
 
 <script>
-const SERVICES = ['orchestrator', 'client'];
+const SERVICES = ['orchestrator', 'client', 'hotkey'];
 const evtSources = {};
 
 function classify(line) {
@@ -592,6 +632,12 @@ function appendLog(svcId, line) {
   const pane = document.getElementById('log-' + svcId);
   const empty = pane.querySelector('.log-empty');
   if (empty) empty.remove();
+
+  // Track active/standby from client logs
+  if (svcId === 'client') {
+    if (line.includes('BOB ACTIVE')) setBobActive(true);
+    if (line.includes('Bob standby') || line.includes('STANDBY')) setBobActive(false);
+  }
 
   const div = document.createElement('div');
   div.className = 'log-line ' + classify(line);
@@ -685,13 +731,34 @@ async function stopService(svcId) {
   setTimeout(pollStatus, 400);
 }
 
+let _bobActive = false;
+
+async function tapBob() {
+  await fetch('/api/toggle-active', { method: 'POST' });
+}
+
+function setBobActive(active) {
+  _bobActive = active;
+  const btn = document.getElementById('tap-btn');
+  if (active) {
+    btn.textContent = '🎙 ACTIVE';
+    btn.style.color = '#22c55e';
+    btn.style.borderColor = '#22c55e';
+  } else {
+    btn.textContent = '● STANDBY';
+    btn.style.color = '';
+    btn.style.borderColor = '';
+  }
+}
+
 async function startAll() {
   await startService('orchestrator');
-  // Small delay so orchestrator is up before client connects
   setTimeout(() => startService('client'), 1500);
+  setTimeout(() => startService('hotkey'), 2000);
 }
 
 async function stopAll() {
+  await stopService('hotkey');
   await stopService('client');
   await stopService('orchestrator');
 }

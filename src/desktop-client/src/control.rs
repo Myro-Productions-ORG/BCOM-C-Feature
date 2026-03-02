@@ -37,11 +37,13 @@ struct ControlMessage {
 /// Spawns a tokio task that:
 /// - Connects to the orchestrator control WebSocket
 /// - Updates `mode_tx` when TTS state changes
+/// - Toggles `active_tx` on toggle_active messages (Meta glasses tap)
 /// - Sends barge_in when `barge_in_rx` fires
 /// - Forwards transcripts to the orchestrator when `transcript_rx` fires
 pub async fn run_control_channel(
     url: &str,
     mode_tx: watch::Sender<ControlMode>,
+    active_tx: watch::Sender<bool>,
     mut barge_in_rx: tokio::sync::mpsc::UnboundedReceiver<()>,
     mut transcript_rx: tokio::sync::mpsc::UnboundedReceiver<String>,
 ) -> Result<()> {
@@ -63,6 +65,16 @@ pub async fn run_control_channel(
                                 "tts_stop" => {
                                     info!("TTS stopped — returning to normal mode");
                                     let _ = mode_tx.send(ControlMode::Normal);
+                                }
+                                "toggle_active" => {
+                                    let current = *active_tx.borrow();
+                                    let next = !current;
+                                    let _ = active_tx.send(next);
+                                    if next {
+                                        info!(">>> BOB ACTIVE — listening <<<");
+                                    } else {
+                                        info!("--- Bob standby ---");
+                                    }
                                 }
                                 "pong" => {}
                                 other => warn!("Unknown control message: {}", other),

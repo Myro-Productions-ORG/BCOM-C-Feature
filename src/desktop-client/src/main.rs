@@ -110,14 +110,17 @@ async fn run_listen(
 
     let stt_client = stt::SttClient::new(stt_endpoint);
 
-    // Control channel — mode watch + barge-in signal sender + transcript forwarder
+    // Control channel — mode watch + active toggle + barge-in + transcript forwarder
     let (mode_tx, mode_rx) = tokio::sync::watch::channel(control::ControlMode::Normal);
+    let (active_tx, active_rx) = tokio::sync::watch::channel(false); // starts STANDBY
     let (barge_in_tx, barge_in_rx) = tokio::sync::mpsc::unbounded_channel::<()>();
     let (transcript_tx, transcript_rx) = tokio::sync::mpsc::unbounded_channel::<String>();
 
+    info!("Bob starting in STANDBY — tap glasses or press TAP in dashboard to activate");
+
     let ctrl_url = orchestrator_url.to_string();
     tokio::spawn(async move {
-        if let Err(e) = control::run_control_channel(&ctrl_url, mode_tx, barge_in_rx, transcript_rx).await {
+        if let Err(e) = control::run_control_channel(&ctrl_url, mode_tx, active_tx, barge_in_rx, transcript_rx).await {
             warn!("Control channel failed: {} — barge-in and transcript forwarding will not function this session. Restart to reconnect.", e);
         }
     });
@@ -178,13 +181,15 @@ async fn run_listen(
                                                 r#type: "final".to_string(),
                                                 text: text.clone(),
                                             };
-                                            // Emit JSON line to stdout
                                             if let Ok(json) = serde_json::to_string(&event) {
                                                 println!("{}", json);
                                             }
                                             info!("Transcript: {}", text);
-                                            // Forward to orchestrator via control channel
-                                            let _ = transcript_tx.send(text);
+                                            if *active_rx.borrow() {
+                                                let _ = transcript_tx.send(text);
+                                            } else {
+                                                info!("STANDBY — transcript not sent to Bob");
+                                            }
                                         }
                                     }
                                     Err(e) => {
