@@ -20,9 +20,10 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Load Bob's system prompt from steering doc
-_STEERING = Path(__file__).resolve().parents[2] / "docs/steering/bob-personality-and-voice.md"
-SYSTEM_PROMPT = _STEERING.read_text() if _STEERING.exists() else "You are Bob, a warm and caring assistant."
+# Load Bob's clean system prompt
+_PROMPT_FILE = Path(__file__).resolve().parents[2] / "docs/steering/bob-system-prompt.txt"
+_FALLBACK_PROMPT = "You are Bob. You're calm, warm, and direct. You keep responses concise."
+SYSTEM_PROMPT = _PROMPT_FILE.read_text().strip() if _PROMPT_FILE.exists() else _FALLBACK_PROMPT
 
 # Active control WebSocket clients
 _control_clients: set[WebSocket] = set()
