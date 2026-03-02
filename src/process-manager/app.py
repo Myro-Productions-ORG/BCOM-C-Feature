@@ -18,7 +18,7 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 VENV_PYTHON = str(REPO_ROOT / "src/orchestrator/venv/bin/python")
 RUST_BIN = str(REPO_ROOT / "src/desktop-client/target/release/bob-desktop-client")
 
-HOTKEY_DAEMON = str(REPO_ROOT / "src/hotkey-daemon/daemon.py")
+MEDIA_KEY_TAP = str(REPO_ROOT / "src/media-key-tap/media-key-tap")
 
 SERVICES = {
     "orchestrator": {
@@ -41,8 +41,8 @@ SERVICES = {
         "port": None,
     },
     "hotkey": {
-        "label": "Hotkey Daemon",
-        "cmd": [VENV_PYTHON, HOTKEY_DAEMON],
+        "label": "Media Key Tap",
+        "cmd": [MEDIA_KEY_TAP, "--url", "http://127.0.0.1:7766/api/toggle-active"],
         "env_extra": {},
         "port": None,
     },
@@ -599,7 +599,7 @@ main {
       <div class="svc-meta">
         <div class="svc-led" id="svcled-hotkey"></div>
         <div>
-          <div class="svc-name">Hotkey Daemon</div>
+          <div class="svc-name">Media Key Tap</div>
           <div class="svc-state" id="state-hotkey">Stopped <span class="svc-pid" id="pid-hotkey"></span></div>
         </div>
       </div>
