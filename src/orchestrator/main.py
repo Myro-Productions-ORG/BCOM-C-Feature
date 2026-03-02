@@ -49,6 +49,12 @@ async def _notify_clients(msg_type: str) -> None:
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     global session, _session_task
+    logger.info(
+        "ElevenLabs key: %s...%s  voice: %s",
+        settings.elevenlabs_api_key[:12],
+        settings.elevenlabs_api_key[-4:],
+        settings.elevenlabs_voice_id,
+    )
     stt = QueueSTTProvider(queue=_transcript_queue)
     tts = ElevenLabsTTSProvider(
         api_key=settings.elevenlabs_api_key,

@@ -31,13 +31,21 @@ class AudioPlayer:
             dtype="int16",
             device=self._device,
         ) as out_stream:
+            remainder = b""
             async for chunk in stream:
                 if self._stop_event.is_set():
                     logger.info("AudioPlayer: stop() called — interrupting playback")
                     break
-                samples = np.frombuffer(chunk, dtype=np.int16)
-                # write is blocking — run in thread pool to avoid blocking event loop
-                await loop.run_in_executor(None, out_stream.write, samples)
+                data = remainder + chunk
+                # int16 requires even byte count — carry odd byte to next chunk
+                if len(data) % 2 != 0:
+                    remainder = data[-1:]
+                    data = data[:-1]
+                else:
+                    remainder = b""
+                if data:
+                    samples = np.frombuffer(data, dtype=np.int16)
+                    await loop.run_in_executor(None, out_stream.write, samples)
 
 
 def find_device(name_fragment: str) -> int | None:
