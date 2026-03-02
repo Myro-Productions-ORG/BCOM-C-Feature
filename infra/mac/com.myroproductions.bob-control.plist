@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.myroproductions.bob-control</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>/Volumes/DevDrive-M4Pro/Projects/BCOM-C-Feature/src/orchestrator/venv/bin/python</string>
+    <string>/Volumes/DevDrive-M4Pro/Projects/BCOM-C-Feature/src/process-manager/app.py</string>
+  </array>
+
+  <key>WorkingDirectory</key>
+  <string>/Volumes/DevDrive-M4Pro/Projects/BCOM-C-Feature/src/process-manager</string>
+
+  <key>RunAtLoad</key>
+  <true/>
+
+  <key>KeepAlive</key>
+  <true/>
+
+  <key>ThrottleInterval</key>
+  <integer>10</integer>
+
+  <key>StandardOutPath</key>
+  <string>/Users/myro-pro/logs/bob-control.log</string>
+
+  <key>StandardErrorPath</key>
+  <string>/Users/myro-pro/logs/bob-control.error.log</string>
+
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>HOME</key>
+    <string>/Users/myro-pro</string>
+    <key>PATH</key>
+    <string>/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+  </dict>
+</dict>
+</plist>
