@@ -5,6 +5,7 @@
 //! and emits transcripts as newline-delimited JSON on stdout.
 
 mod audio;
+mod control;
 mod stt;
 mod vad;
 
@@ -45,6 +46,10 @@ enum Commands {
         /// Trailing silence in ms before ending an utterance
         #[arg(long, default_value_t = 600)]
         silence_ms: u32,
+
+        /// Orchestrator control WebSocket URL
+        #[arg(long, default_value = "ws://127.0.0.1:8766/ws/control")]
+        orchestrator_url: String,
     },
     /// List available audio input devices
     Devices,
@@ -76,8 +81,9 @@ async fn main() {
             device,
             vad_sensitivity,
             silence_ms,
+            orchestrator_url,
         } => {
-            if let Err(e) = run_listen(&stt_endpoint, device.as_deref(), vad_sensitivity, silence_ms).await {
+            if let Err(e) = run_listen(&stt_endpoint, &orchestrator_url, device.as_deref(), vad_sensitivity, silence_ms).await {
                 error!("Fatal: {}", e);
                 std::process::exit(1);
             }
@@ -87,6 +93,7 @@ async fn main() {
 
 async fn run_listen(
     stt_endpoint: &str,
+    orchestrator_url: &str,
     device: Option<&str>,
     vad_sensitivity: f32,
     silence_ms: u32,
@@ -102,6 +109,21 @@ async fn run_listen(
     info!("Mic capture active. Listening...");
 
     let stt_client = stt::SttClient::new(stt_endpoint);
+
+    // Control channel — mode watch + active toggle + barge-in + transcript forwarder
+    let (mode_tx, mode_rx) = tokio::sync::watch::channel(control::ControlMode::Normal);
+    let (active_tx, active_rx) = tokio::sync::watch::channel(false); // starts STANDBY
+    let (barge_in_tx, barge_in_rx) = tokio::sync::mpsc::unbounded_channel::<()>();
+    let (transcript_tx, transcript_rx) = tokio::sync::mpsc::unbounded_channel::<String>();
+
+    info!("Bob starting in STANDBY — tap glasses or press TAP in dashboard to activate");
+
+    let ctrl_url = orchestrator_url.to_string();
+    tokio::spawn(async move {
+        if let Err(e) = control::run_control_channel(&ctrl_url, mode_tx, active_tx, barge_in_rx, transcript_rx).await {
+            warn!("Control channel failed: {} — barge-in and transcript forwarding will not function this session. Restart to reconnect.", e);
+        }
+    });
 
     let mut vad = EnergyVad::new(
         vad_sensitivity,
@@ -129,6 +151,11 @@ async fn run_listen(
 
                     match event {
                         VadEvent::SpeechStart { pre_roll } => {
+                            let mode = *mode_rx.borrow();
+                            if mode == control::ControlMode::BargeIn {
+                                info!("Barge-in detected (TTS active)");
+                                let _ = barge_in_tx.send(());
+                            }
                             info!("Speech detected");
                             is_in_utterance = true;
                             utterance_frames.clear();
@@ -154,11 +181,15 @@ async fn run_listen(
                                                 r#type: "final".to_string(),
                                                 text: text.clone(),
                                             };
-                                            // Emit JSON line to stdout
                                             if let Ok(json) = serde_json::to_string(&event) {
                                                 println!("{}", json);
                                             }
                                             info!("Transcript: {}", text);
+                                            if *active_rx.borrow() {
+                                                let _ = transcript_tx.send(text);
+                                            } else {
+                                                info!("STANDBY — transcript not sent to Bob");
+                                            }
                                         }
                                     }
                                     Err(e) => {

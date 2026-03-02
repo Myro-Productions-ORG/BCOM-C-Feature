@@ -1,0 +1,55 @@
+"""ElevenLabs streaming TTS provider."""
+
+import logging
+from typing import AsyncIterator
+
+import httpx
+
+from .types import TTSProvider
+
+logger = logging.getLogger(__name__)
+
+ELEVENLABS_API_BASE = "https://api.elevenlabs.io/v1"
+
+
+class ElevenLabsTTSProvider(TTSProvider):
+    def __init__(self, api_key: str, voice_id: str, sample_rate: int = 22050):
+        self._api_key = api_key
+        self._voice_id = voice_id
+        self._sample_rate = sample_rate
+
+    async def synthesize_stream(self, text: str) -> AsyncIterator[bytes]:
+        """Stream PCM audio from ElevenLabs as chunks arrive."""
+        url = f"{ELEVENLABS_API_BASE}/text-to-speech/{self._voice_id}/stream"
+        headers = {
+            "xi-api-key": self._api_key,
+            "Content-Type": "application/json",
+        }
+        params = {"output_format": f"pcm_{self._sample_rate}"}
+        payload = {
+            "text": text,
+            "model_id": "eleven_turbo_v2",
+            "voice_settings": {
+                "stability": 0.60,
+                "similarity_boost": 0.75,
+                "style": 0.35,
+                "use_speaker_boost": True,
+            },
+        }
+
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            async with client.stream("POST", url, params=params, headers=headers, json=payload) as response:
+                if response.status_code != 200:
+                    body = await response.aread()
+                    logger.error(
+                        "ElevenLabs %d — key: %s...%s — body: %s",
+                        response.status_code,
+                        self._api_key[:12],
+                        self._api_key[-4:],
+                        body.decode("utf-8", errors="replace")[:300],
+                    )
+                    response.raise_for_status()
+                logger.info("ElevenLabs TTS stream started")
+                async for chunk in response.aiter_bytes():
+                    if chunk:
+                        yield chunk
