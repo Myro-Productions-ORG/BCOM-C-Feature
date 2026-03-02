@@ -83,8 +83,13 @@ class Session:
                 # --- SPEAKING ---
                 self._set_state(SessionState.SPEAKING)
                 await self._notify("tts_start")
-                await self._player.play(self._tts.synthesize_stream(response_text))
-                await self._notify("tts_stop")
+                try:
+                    await self._player.play(self._tts.synthesize_stream(response_text))
+                except Exception as tts_err:
+                    logger.error("TTS error (skipping playback): %s", tts_err)
+                finally:
+                    # Always send tts_stop so Rust client resets to Normal mode
+                    await self._notify("tts_stop")
 
                 turns += 1
         finally:
