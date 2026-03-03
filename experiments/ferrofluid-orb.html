@@ -196,18 +196,27 @@ const orbMat = new THREE.ShaderMaterial({
     varying vec3 vNormal;
     varying vec3 vWorldPos;
 
+    float noiseDisp(vec3 q) {
+      return (snoise(q * 1.8 + uTime * 0.40) * 0.30
+            + snoise(q * 3.5 + uTime * 0.70) * 0.14
+            + snoise(q * 7.0 + uTime * 1.10) * 0.06) * uEnergy;
+    }
+
     void main() {
       vec3 p = position;
 
-      // Three layers of noise at increasing frequency and speed
-      float n1 = snoise(p * 1.8 + uTime * 0.40) * 0.30;
-      float n2 = snoise(p * 3.5 + uTime * 0.70) * 0.14;
-      float n3 = snoise(p * 7.0 + uTime * 1.10) * 0.06;
-      float disp = (n1 + n2 + n3) * uEnergy;
-
+      float disp = noiseDisp(p);
       vec3 displaced = p + normal * disp;
 
-      vNormal   = normalize(normalMatrix * normal);
+      // Approximate displaced normal via finite differences
+      vec3 tangent   = normalize(cross(normal, vec3(0.0, 1.0, 0.0001)));
+      vec3 bitangent = cross(normal, tangent);
+      float eps = 0.02;
+      float dx = (noiseDisp(p + tangent * eps) - noiseDisp(p - tangent * eps)) / (2.0 * eps);
+      float dy = (noiseDisp(p + bitangent * eps) - noiseDisp(p - bitangent * eps)) / (2.0 * eps);
+      vec3 displacedNormal = normalize(normal - dx * tangent - dy * bitangent);
+
+      vNormal   = normalize(normalMatrix * displacedNormal);
       vWorldPos = (modelMatrix * vec4(displaced, 1.0)).xyz;
 
       gl_Position = projectionMatrix * modelViewMatrix * vec4(displaced, 1.0);
