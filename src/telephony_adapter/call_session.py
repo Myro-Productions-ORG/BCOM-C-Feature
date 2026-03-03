@@ -1,7 +1,7 @@
 """Per-call Claude session with conversation history."""
 
 import logging
-from typing import AsyncIterator
+from typing import AsyncGenerator, AsyncIterator
 
 import anthropic
 
@@ -31,7 +31,7 @@ class CallSession:
         self._max_tokens = max_tokens if max_tokens is not None else settings.claude_max_tokens
         self._client = anthropic.AsyncAnthropic(api_key=settings.anthropic_api_key)
 
-    async def respond(self, user_text: str) -> AsyncIterator[tuple[str, bool]]:
+    async def respond(self, user_text: str) -> AsyncGenerator[tuple[str, bool], None]:
         """Yield (token, is_last) pairs. Final item is always ("", True)."""
         self.history.append({"role": "user", "content": user_text})
         full_response = ""

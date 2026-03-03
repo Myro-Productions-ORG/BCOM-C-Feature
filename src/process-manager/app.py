@@ -763,6 +763,25 @@ main {
       <div class="log-pane" id="log-hotkey" style="height:120px"><div class="log-empty">No output yet.</div></div>
     </div>
   </div>
+  <div class="card" id="card-telephony">
+    <div class="card-head">
+      <div class="svc-meta">
+        <div class="svc-led" id="svcled-telephony"></div>
+        <div>
+          <div class="svc-name">Telephony Adapter</div>
+          <div class="svc-state" id="state-telephony">Stopped <span class="svc-pid" id="pid-telephony"></span></div>
+        </div>
+      </div>
+      <div class="card-actions">
+        <span style="font-size:10px;color:#555;letter-spacing:0.08em;padding-right:8px">TWILIO CONVERSATIONRELAY · PORT 8767</span>
+        <button class="btn btn-green" onclick="startService('telephony')">&#9654; Start</button>
+        <button class="btn btn-red" onclick="stopService('telephony')">&#9632; Stop</button>
+      </div>
+    </div>
+    <div class="log-wrap">
+      <div class="log-pane" id="log-telephony" style="height:120px"><div class="log-empty">No output yet.</div></div>
+    </div>
+  </div>
   <!-- SETTINGS PANEL -->
   <div class="settings-panel">
     <div class="settings-title">BOB SETTINGS</div>
@@ -796,7 +815,7 @@ main {
 </main>
 
 <script>
-const SERVICES = ['orchestrator', 'client', 'hotkey'];
+const SERVICES = ['orchestrator', 'client', 'hotkey', 'telephony'];
 const evtSources = {};
 
 function classify(line) {
