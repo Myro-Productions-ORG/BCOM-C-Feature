@@ -251,6 +251,40 @@ const orbGeo  = new THREE.SphereGeometry(1, 128, 128);
 const orbMesh = new THREE.Mesh(orbGeo, orbMat);
 scene.add(orbMesh);
 
+// ── Mist Ring ────────────────────────────────────────────────────────────────
+(function buildMist() {
+  // Build a radial gradient texture via canvas
+  const size = 256;
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = size;
+  const ctx = canvas.getContext('2d');
+  const g = ctx.createRadialGradient(size/2, size/2, 0, size/2, size/2, size/2);
+  g.addColorStop(0.0, 'rgba(30, 80, 180, 0.18)');
+  g.addColorStop(0.4, 'rgba(20, 60, 160, 0.08)');
+  g.addColorStop(1.0, 'rgba(0,  0,   0,  0.00)');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, size, size);
+  const tex = new THREE.CanvasTexture(canvas);
+
+  const mistMat = new THREE.MeshBasicMaterial({
+    map: tex,
+    transparent: true,
+    opacity: 1,
+    depthWrite: false,
+    side: THREE.DoubleSide,
+    blending: THREE.AdditiveBlending,
+  });
+
+  // 4 planes, rotated around the orb
+  for (let i = 0; i < 4; i++) {
+    const plane = new THREE.Mesh(new THREE.PlaneGeometry(3.8, 3.8), mistMat);
+    plane.rotation.x = Math.PI / 2;
+    plane.rotation.z = (i / 4) * Math.PI;
+    plane.position.y = -0.05 + (Math.random() - 0.5) * 0.3;
+    scene.add(plane);
+  }
+})();
+
 function animate() {
   requestAnimationFrame(animate);
   const t = clock.getElapsedTime();
