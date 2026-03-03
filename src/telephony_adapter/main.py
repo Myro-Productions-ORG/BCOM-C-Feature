@@ -4,6 +4,8 @@ import json
 import logging
 from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import Response
+from pydantic import BaseModel
+from twilio.rest import Client as TwilioClient
 import uvicorn
 
 from .config import settings
@@ -19,6 +21,12 @@ logger = logging.getLogger(__name__)
 app = FastAPI(title="Bob Telephony Adapter")
 
 _active_sessions: dict[str, CallSession] = {}
+
+_twilio_client = TwilioClient(
+    settings.twilio_api_key_sid,
+    settings.twilio_api_key_secret,
+    account_sid=settings.twilio_account_sid,
+)
 
 
 @app.get("/health")
@@ -89,6 +97,23 @@ async def conversation_ws(ws: WebSocket):
         if session:
             _active_sessions.pop(session.call_sid, None)
             logger.info("ConversationRelay session ended: %s", session.call_sid)
+
+
+class OutboundCallRequest(BaseModel):
+    to: str
+
+
+@app.post("/calls/outbound")
+async def outbound_call(body: OutboundCallRequest):
+    """Initiate an outbound call via Twilio REST API."""
+    twiml_url = f"{settings.public_base_url}/twiml/inbound"
+    call = _twilio_client.calls.create(
+        to=body.to,
+        from_=settings.twilio_phone_number,
+        url=twiml_url,
+    )
+    logger.info("Outbound call initiated: %s → %s", call.sid, body.to)
+    return {"call_sid": call.sid, "to": body.to, "status": "initiated"}
 
 
 if __name__ == "__main__":
