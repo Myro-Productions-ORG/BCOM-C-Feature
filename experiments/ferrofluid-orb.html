@@ -301,6 +301,7 @@ const lerpColor = STATES.idle.color.clone();
 
 function setState(name) {
   if (!STATES[name]) return;
+  if (name === 'idle' || name === 'listening') silenceFrames = 0;
   state = name;
   targetColor.copy(STATES[name].color);
   targetEnergy = STATES[name].energy;
@@ -331,6 +332,7 @@ async function initMic() {
   try {
     const stream  = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
     const ctx     = new AudioContext();
+    await ctx.resume();
     const source  = ctx.createMediaStreamSource(stream);
     analyser      = ctx.createAnalyser();
     analyser.fftSize = 256;
