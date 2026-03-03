@@ -338,6 +338,42 @@ const GLSL_SIMPLEX = /* glsl */`
   }
 `;
 
+// ── Spectrum Analyser ──────────────────────────────────────────────────────
+const SPECTRUM_BANDS = 64;
+const FREQ_MIN       = 60;
+const FREQ_MAX       = 8000;
+
+// 64×1 float texture — updated every frame with FFT amplitudes
+const freqTexData = new Float32Array(SPECTRUM_BANDS);
+const freqTex = new THREE.DataTexture(
+  freqTexData,
+  SPECTRUM_BANDS,  // width
+  1,               // height
+  THREE.RedFormat,
+  THREE.FloatType
+);
+freqTex.minFilter = THREE.LinearFilter;
+freqTex.magFilter = THREE.LinearFilter;
+freqTex.needsUpdate = true;
+
+// Per-band FFT bin ranges — computed once mic is initialized
+let bandBins = null;
+
+function buildBandBins(sampleRate, fftSize) {
+  const binHz = sampleRate / fftSize;
+  const result = [];
+  for (let i = 0; i < SPECTRUM_BANDS; i++) {
+    const t0 = i / SPECTRUM_BANDS;
+    const t1 = (i + 1) / SPECTRUM_BANDS;
+    const f0 = FREQ_MIN * Math.pow(FREQ_MAX / FREQ_MIN, t0);
+    const f1 = FREQ_MIN * Math.pow(FREQ_MAX / FREQ_MIN, t1);
+    const b0 = Math.max(0, Math.floor(f0 / binHz));
+    const b1 = Math.min(fftSize / 2 - 1, Math.ceil(f1 / binHz));
+    result.push([b0, Math.max(b0, b1)]);
+  }
+  return result;
+}
+
 const orbUniforms = {
   uTime:           { value: 0 },
   uEnergy:         { value: 0.15 },
@@ -357,6 +393,8 @@ const orbUniforms = {
   uPeakBlend:  { value: 0.65 },
   uRimBlend:   { value: 0.75 },
   uBrightness: { value: 0.7 },
+  uFreqTex:      { value: freqTex },
+  uSpectrumGain: { value: 1.0 },
 };
 
 const orbMat = new THREE.ShaderMaterial({
@@ -667,9 +705,10 @@ async function initMic() {
     await ctx.resume();
     const source  = ctx.createMediaStreamSource(stream);
     analyser      = ctx.createAnalyser();
-    analyser.fftSize = 256;
+    analyser.fftSize = 2048;
     source.connect(analyser);
-    freqData  = new Uint8Array(analyser.frequencyBinCount);
+    freqData   = new Uint8Array(analyser.frequencyBinCount);  // 1024 entries
+    bandBins   = buildBandBins(ctx.sampleRate, analyser.fftSize);
     micActive = true;
     console.log('[orb] mic initialized');
   } catch (err) {
