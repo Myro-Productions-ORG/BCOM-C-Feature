@@ -47,7 +47,11 @@ async def conversation_ws(ws: WebSocket):
     try:
         while True:
             raw = await ws.receive_text()
-            msg = json.loads(raw)
+            try:
+                msg = json.loads(raw)
+            except json.JSONDecodeError:
+                logger.warning("Received non-JSON frame, ignoring: %.80s", raw)
+                continue
             msg_type = msg.get("type", "")
 
             if msg_type == "setup":

@@ -1,6 +1,6 @@
 import json
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch, AsyncMock
+from unittest.mock import MagicMock, patch
 from starlette.testclient import TestClient
 
 from telephony_adapter.main import app
@@ -35,12 +35,7 @@ def test_ws_prompt_sends_text_responses():
 
     with patch("telephony_adapter.main.CallSession") as MockSession:
         instance = MagicMock()
-        instance.respond = AsyncMock(return_value=fake_respond(""))
-        # Make respond return an async generator directly
-        async def respond_gen(text):
-            yield "Hello!", False
-            yield "", True
-        instance.respond = respond_gen
+        instance.respond = fake_respond
         MockSession.return_value = instance
 
         with TestClient(app) as client:
