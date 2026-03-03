@@ -319,12 +319,69 @@ window.addEventListener('keydown', (e) => {
   if (k === 'i') setState('idle');
 });
 
+// ── Mic Input ────────────────────────────────────────────────────────────────
+let analyser      = null;
+let freqData      = null;
+let micActive     = false;
+const MIC_THRESHOLD     = 0.018;
+const MIC_SILENCE_FRAMES = 45;
+let silenceFrames = 0;
+
+async function initMic() {
+  try {
+    const stream  = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+    const ctx     = new AudioContext();
+    const source  = ctx.createMediaStreamSource(stream);
+    analyser      = ctx.createAnalyser();
+    analyser.fftSize = 256;
+    source.connect(analyser);
+    freqData  = new Uint8Array(analyser.frequencyBinCount);
+    micActive = true;
+    console.log('[orb] mic initialized');
+  } catch (err) {
+    console.warn('[orb] mic not available:', err.message);
+  }
+}
+
+function getMicAmplitude() {
+  if (!analyser) return 0;
+  analyser.getByteFrequencyData(freqData);
+  let sum = 0;
+  for (let i = 0; i < freqData.length; i++) sum += freqData[i] * freqData[i];
+  return Math.sqrt(sum / freqData.length) / 255;
+}
+
+initMic();
+
 const LERP_SPEED = 0.025;
 
 function animate() {
   requestAnimationFrame(animate);
   const t = clock.getElapsedTime();
   controls.update();
+
+  // Mic amplitude → listening state
+  if (micActive && (state === 'idle' || state === 'listening')) {
+    const amp = getMicAmplitude();
+    if (amp > MIC_THRESHOLD) {
+      silenceFrames = 0;
+      if (state !== 'listening') setState('listening');
+      // Drive energy from mic amplitude — map 0..0.2 → 0.3..0.95
+      targetEnergy = 0.30 + Math.min(amp / 0.2, 1.0) * 0.65;
+      // Shift color toward green as amplitude increases
+      const greenAmount = Math.min(amp / 0.15, 1.0);
+      targetColor.setRGB(
+        0.0,
+        0.6 * (1 - greenAmount) + 1.0 * greenAmount,
+        1.0 * (1 - greenAmount) + 0.53 * greenAmount,
+      );
+    } else {
+      silenceFrames++;
+      if (state === 'listening' && silenceFrames > MIC_SILENCE_FRAMES) {
+        setState('idle');
+      }
+    }
+  }
 
   // Particle drift
   scene.children.forEach(child => {
