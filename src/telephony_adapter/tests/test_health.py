@@ -22,3 +22,4 @@ async def test_health():
         resp = await client.get("/health")
     assert resp.status_code == 200
     assert resp.json()["status"] == "ok"
+    assert resp.json()["port"] == 8767
