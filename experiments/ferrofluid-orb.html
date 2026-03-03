@@ -6,7 +6,7 @@
   <title>Ferrofluid Orb</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { background: #050810; overflow: hidden; }
+    body { background: #030c22; overflow: hidden; }
     canvas { display: block; }
     #status {
       position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
@@ -14,10 +14,159 @@
       font-size: 11px; letter-spacing: 0.15em; text-transform: uppercase;
       pointer-events: none;
     }
+    #ctrl-toggle {
+      position: fixed; top: 20px; right: 20px; z-index: 100;
+      background: rgba(10,20,50,0.75); border: 1px solid rgba(80,140,255,0.25);
+      color: rgba(180,210,255,0.7); font-family: 'Courier New', monospace;
+      font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase;
+      padding: 7px 14px; cursor: pointer; border-radius: 3px;
+      backdrop-filter: blur(8px); transition: border-color 0.2s, color 0.2s;
+    }
+    #ctrl-toggle:hover { border-color: rgba(80,140,255,0.6); color: #fff; }
+    #ctrl-panel {
+      position: fixed; top: 52px; right: 20px; z-index: 99;
+      background: rgba(5,12,34,0.92); border: 1px solid rgba(80,140,255,0.2);
+      border-radius: 6px; width: 240px; max-height: calc(100vh - 80px);
+      backdrop-filter: blur(14px); display: none; flex-direction: column;
+      overflow: hidden;
+    }
+    #ctrl-panel.open { display: flex; }
+    .tab-bar {
+      display: flex; border-bottom: 1px solid rgba(80,140,255,0.15); flex-shrink: 0;
+    }
+    .tab-bar button {
+      flex: 1; padding: 8px 0; background: none; border: none; cursor: pointer;
+      font-family: 'Courier New', monospace; font-size: 10px;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      color: rgba(120,160,255,0.45); transition: color 0.15s;
+    }
+    .tab-bar button.active { color: rgba(180,210,255,0.9); border-bottom: 1px solid rgba(80,140,255,0.6); }
+    .tab-bar button:hover { color: rgba(180,210,255,0.7); }
+    .tab-body {
+      overflow-y: auto; padding: 12px 14px;
+      display: none; flex-direction: column; gap: 9px;
+    }
+    .tab-body.active { display: flex; }
+    .cp-section {
+      font-family: 'Courier New', monospace; font-size: 9px;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: rgba(80,140,255,0.4); margin-top: 6px;
+    }
+    .cp-row {
+      display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    }
+    .cp-row label {
+      font-family: 'Courier New', monospace; font-size: 10px;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: rgba(150,185,255,0.6); white-space: nowrap;
+    }
+    .cp-row input[type=color] {
+      width: 36px; height: 22px; border: 1px solid rgba(80,140,255,0.3);
+      border-radius: 3px; background: none; cursor: pointer; padding: 1px; flex-shrink: 0;
+    }
+    .sl-row {
+      display: flex; flex-direction: column; gap: 3px;
+    }
+    .sl-head {
+      display: flex; justify-content: space-between; align-items: baseline;
+    }
+    .sl-head label {
+      font-family: 'Courier New', monospace; font-size: 10px;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: rgba(150,185,255,0.6);
+    }
+    .sl-head span {
+      font-family: 'Courier New', monospace; font-size: 9px;
+      color: rgba(100,150,255,0.5); min-width: 34px; text-align: right;
+    }
+    .sl-row input[type=range] {
+      width: 100%; height: 3px; cursor: pointer; accent-color: rgba(80,140,255,0.8);
+    }
   </style>
 </head>
 <body>
 <div id="status">idle — T: think · S: speak · I: idle</div>
+<button id="ctrl-toggle">Controls</button>
+<div id="ctrl-panel">
+  <div class="tab-bar">
+    <button class="tab active" data-tab="colors">Color</button>
+    <button class="tab"        data-tab="motion">Motion</button>
+  </div>
+
+  <!-- COLOR TAB -->
+  <div class="tab-body active" id="tab-colors">
+    <div class="cp-section">Scene</div>
+    <div class="cp-row"><label>Background</label><input type="color" id="cp-bg"        value="#030c22"></div>
+    <div class="cp-row"><label>Particles</label> <input type="color" id="cp-particles" value="#4080ff"></div>
+    <div class="cp-section">Lighting</div>
+    <div class="cp-row"><label>Ambient color</label><input type="color" id="cp-ambient" value="#0a1530"></div>
+    <div class="sl-row"><div class="sl-head"><label>Ambient intensity</label><span id="v-aint">0.4</span></div><input type="range" id="sl-aint" min="0" max="3" step="0.05" value="0.4"></div>
+    <div class="cp-section">Bob Blob</div>
+    <div class="cp-row"><label>Idle color</label>   <input type="color" id="cp-base"       value="#0044dd"></div>
+    <div class="cp-row"><label>Listening</label>    <input type="color" id="cp-listening"   value="#0099ff"></div>
+    <div class="cp-row"><label>Thinking</label>     <input type="color" id="cp-thinking"    value="#ff6600"></div>
+    <div class="cp-row"><label>Talking</label>      <input type="color" id="cp-talking"     value="#00ff88"></div>
+    <div class="cp-row"><label>Valleys</label>      <input type="color" id="cp-valley"      value="#020918"></div>
+    <div class="cp-row"><label>Mid surface</label>  <input type="color" id="cp-mid"         value="#003bc7"></div>
+    <div class="cp-row"><label>Peaks</label>        <input type="color" id="cp-peak"        value="#14f273"></div>
+    <div class="cp-row"><label>Rim glow</label>     <input type="color" id="cp-rim"         value="#0dd966"></div>
+    <div class="cp-row"><label>Rim highlight</label><input type="color" id="cp-rim-high"    value="#33ffa8"></div>
+  </div>
+
+  <!-- EXPORT -->
+  <div style="padding:10px 14px; border-bottom:1px solid rgba(80,140,255,0.15); flex-shrink:0; display:flex; gap:6px;">
+    <button id="btn-export" style="flex:1; padding:7px 0; background:rgba(10,20,50,0.6); border:1px solid rgba(80,140,255,0.3); color:rgba(180,210,255,0.7); font-family:'Courier New',monospace; font-size:10px; letter-spacing:0.15em; text-transform:uppercase; cursor:pointer; border-radius:3px; transition:border-color 0.2s,color 0.2s;">Export</button>
+    <button id="btn-import" style="flex:1; padding:7px 0; background:rgba(10,20,50,0.6); border:1px solid rgba(80,140,255,0.3); color:rgba(180,210,255,0.7); font-family:'Courier New',monospace; font-size:10px; letter-spacing:0.15em; text-transform:uppercase; cursor:pointer; border-radius:3px; transition:border-color 0.2s,color 0.2s;">Import</button>
+    <input type="file" id="file-import" accept=".html,.json" style="display:none">
+  </div>
+
+  <!-- MOTION TAB -->
+  <div class="tab-body" id="tab-motion">
+    <div class="cp-section">Particles</div>
+    <div class="sl-row"><div class="sl-head"><label>Drift speed</label><span id="v-pdrift">1.0</span></div><input type="range" id="sl-pdrift"   min="0" max="3"    step="0.05" value="1.0"></div>
+    <div class="sl-row"><div class="sl-head"><label>Opacity</label>    <span id="v-popac">0.4</span></div><input type="range" id="sl-popac"    min="0" max="1"    step="0.02" value="0.4"></div>
+    <div class="sl-row"><div class="sl-head"><label>Size scale</label> <span id="v-psize">1.0</span></div><input type="range" id="sl-psize"    min="0.2" max="4"  step="0.1"  value="1.0"></div>
+
+    <div class="cp-section">Blob — Surface</div>
+    <div class="sl-row"><div class="sl-head"><label>L1 frequency</label><span id="v-n1f">1.8</span></div><input type="range" id="sl-n1f" min="0.2" max="6"   step="0.1"  value="1.8"></div>
+    <div class="sl-row"><div class="sl-head"><label>L1 speed</label>    <span id="v-n1s">0.4</span></div><input type="range" id="sl-n1s" min="0"   max="3"   step="0.05" value="0.4"></div>
+    <div class="sl-row"><div class="sl-head"><label>L1 amplitude</label><span id="v-n1a">0.30</span></div><input type="range" id="sl-n1a" min="0"  max="2.0" step="0.01" value="0.30"></div>
+    <div class="sl-row"><div class="sl-head"><label>L2 frequency</label><span id="v-n2f">3.5</span></div><input type="range" id="sl-n2f" min="0.5" max="12"  step="0.1"  value="3.5"></div>
+    <div class="sl-row"><div class="sl-head"><label>L2 speed</label>    <span id="v-n2s">0.7</span></div><input type="range" id="sl-n2s" min="0"   max="3"   step="0.05" value="0.7"></div>
+    <div class="sl-row"><div class="sl-head"><label>L2 amplitude</label><span id="v-n2a">0.14</span></div><input type="range" id="sl-n2a" min="0"  max="1.2" step="0.01" value="0.14"></div>
+    <div class="sl-row"><div class="sl-head"><label>L3 frequency</label><span id="v-n3f">7.0</span></div><input type="range" id="sl-n3f" min="1"   max="20"  step="0.5"  value="7.0"></div>
+    <div class="sl-row"><div class="sl-head"><label>L3 speed</label>    <span id="v-n3s">1.1</span></div><input type="range" id="sl-n3s" min="0"   max="4"   step="0.05" value="1.1"></div>
+    <div class="sl-row"><div class="sl-head"><label>L3 amplitude</label><span id="v-n3a">0.06</span></div><input type="range" id="sl-n3a" min="0"  max="0.6" step="0.01" value="0.06"></div>
+
+    <div class="cp-section">Blob — Lighting</div>
+    <div class="sl-row"><div class="sl-head"><label>Fresnel power</label><span id="v-fres">3.0</span></div><input type="range" id="sl-fres"  min="0.5" max="10"  step="0.1"  value="3.0"></div>
+    <div class="sl-row"><div class="sl-head"><label>Peak width</label>  <span id="v-pkwd">0.5</span></div><input type="range" id="sl-pkwd"  min="0.1" max="2"   step="0.05" value="0.5"></div>
+    <div class="sl-row"><div class="sl-head"><label>Peak blend</label>  <span id="v-pkbl">0.65</span></div><input type="range" id="sl-pkbl" min="0"   max="1"   step="0.01" value="0.65"></div>
+    <div class="sl-row"><div class="sl-head"><label>Rim blend</label>   <span id="v-ribl">0.75</span></div><input type="range" id="sl-ribl" min="0"   max="1"   step="0.01" value="0.75"></div>
+    <div class="sl-row"><div class="sl-head"><label>Brightness</label>  <span id="v-brit">0.7</span></div><input type="range" id="sl-brit"  min="0"   max="2"   step="0.02" value="0.7"></div>
+
+    <div class="cp-section">Blob — Animation</div>
+    <div class="sl-row"><div class="sl-head"><label>Transition spd</label><span id="v-lerp">0.025</span></div><input type="range" id="sl-lerp"   min="0.002" max="0.15" step="0.002" value="0.025"></div>
+    <div class="sl-row"><div class="sl-head"><label>Idle sway</label>    <span id="v-sway">0.08</span></div><input type="range"  id="sl-sway"   min="0"     max="0.4"  step="0.005" value="0.08"></div>
+    <div class="sl-row"><div class="sl-head"><label>Think rotation</label><span id="v-thkr">0.35</span></div><input type="range" id="sl-thkr"   min="0"     max="1.5"  step="0.01"  value="0.35"></div>
+    <div class="sl-row"><div class="sl-head"><label>Talk pulse spd</label><span id="v-tkps">7.0</span></div><input type="range"  id="sl-tkps"   min="0.5"   max="20"   step="0.5"   value="7.0"></div>
+    <div class="sl-row"><div class="sl-head"><label>Talk pulse amt</label><span id="v-tkpa">0.12</span></div><input type="range" id="sl-tkpa"   min="0"     max="0.5"  step="0.01"  value="0.12"></div>
+    <div class="sl-row"><div class="sl-head"><label>Think pulse spd</label><span id="v-thps">2.5</span></div><input type="range" id="sl-thps"  min="0.2"   max="10"   step="0.1"   value="2.5"></div>
+    <div class="sl-row"><div class="sl-head"><label>Think pulse amt</label><span id="v-thpa">0.08</span></div><input type="range" id="sl-thpa" min="0"     max="0.3"  step="0.005" value="0.08"></div>
+
+    <div class="cp-section">Arcs</div>
+    <div class="sl-row"><div class="sl-head"><label>Spawn rate</label>    <span id="v-aspn">0.35</span></div><input type="range" id="sl-aspn" min="0"   max="2"    step="0.05"  value="0.35"></div>
+    <div class="sl-row"><div class="sl-head"><label>Max distance</label>  <span id="v-adst">3.16</span></div><input type="range" id="sl-adst" min="0.5" max="10"   step="0.1"   value="3.16"></div>
+    <div class="sl-row"><div class="sl-head"><label>Lifetime</label>      <span id="v-alfe">0.12</span></div><input type="range" id="sl-alfe" min="0.05" max="2"  step="0.05"  value="0.12"></div>
+    <div class="sl-row"><div class="sl-head"><label>Lifetime spread</label><span id="v-alfr">0.45</span></div><input type="range" id="sl-alfr" min="0"   max="2"    step="0.05"  value="0.45"></div>
+    <div class="sl-row"><div class="sl-head"><label>Jitter</label>        <span id="v-ajit">1.0</span></div><input type="range"  id="sl-ajit" min="0"   max="3"    step="0.05"  value="1.0"></div>
+    <div class="sl-row"><div class="sl-head"><label>Flicker speed</label> <span id="v-aflk">48</span></div><input type="range"   id="sl-aflk" min="1"   max="120"  step="1"     value="48"></div>
+    <div class="sl-row"><div class="sl-head"><label>Opacity</label>       <span id="v-aopc">0.75</span></div><input type="range" id="sl-aopc" min="0"   max="1"    step="0.02"  value="0.75"></div>
+
+    <div class="cp-section">Bob — Size</div>
+    <div class="sl-row"><div class="sl-head"><label>Scale</label>         <span id="v-bobs">1.0</span></div><input type="range"  id="sl-bobs" min="0.2" max="3"    step="0.05"  value="1.0"></div>
+  </div>
+</div>
 
 <script type="importmap">
 {
@@ -30,14 +179,13 @@
 
 <script type="module">
 import * as THREE from 'three';
-import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 
 // ── Scene ───────────────────────────────────────────────────────────────────
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x050810);
+scene.background = new THREE.Color(0x030c22);
 
 const camera = new THREE.PerspectiveCamera(60, innerWidth / innerHeight, 0.1, 100);
 camera.position.set(0, 0, 3.2);
@@ -49,11 +197,6 @@ renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.2;
 document.body.appendChild(renderer.domElement);
 
-const controls = new OrbitControls(camera, renderer.domElement);
-controls.enableDamping = true;
-controls.dampingFactor = 0.05;
-controls.minDistance = 1.8;
-controls.maxDistance = 8;
 
 // ── Post-processing ─────────────────────────────────────────────────────────
 const composer = new EffectComposer(renderer);
@@ -78,10 +221,15 @@ window.addEventListener('resize', () => {
 // ── Clock & animate ──────────────────────────────────────────────────────────
 const clock = new THREE.Clock();
 
+let particleMat;       // exposed for color panel
+let particleMesh;      // exposed for arc system (rotates with particles)
+let particlePositions; // raw Float32Array of particle positions (local space)
+
 // ── Particles (sparkly void) ─────────────────────────────────────────────────
 (function buildParticles() {
   const COUNT = 2200;
-  const positions = new Float32Array(COUNT * 3);
+  particlePositions = new Float32Array(COUNT * 3);
+  const positions = particlePositions;
   const sizes     = new Float32Array(COUNT);
   const alphas    = new Float32Array(COUNT);
 
@@ -89,7 +237,7 @@ const clock = new THREE.Clock();
     // distribute in a shell between r=2.5 and r=7
     const r     = 2.5 + Math.random() * 4.5;
     const theta = Math.random() * Math.PI * 2;
-    const phi   = Math.acos(2 * Math.random() - 1);
+    const phi   = Math.acos(-Math.random());
     positions[i * 3]     = r * Math.sin(phi) * Math.cos(theta);
     positions[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
     positions[i * 3 + 2] = r * Math.cos(phi);
@@ -102,32 +250,41 @@ const clock = new THREE.Clock();
   geo.setAttribute('aSize',    new THREE.BufferAttribute(sizes, 1));
   geo.setAttribute('aAlpha',   new THREE.BufferAttribute(alphas, 1));
 
-  const mat = new THREE.ShaderMaterial({
+  particleMat = new THREE.ShaderMaterial({
     transparent: true,
     depthWrite: false,
+    uniforms: {
+      uParticleColor:   { value: new THREE.Color(0x4080ff) },
+      uParticleOpacity: { value: 0.4 },
+      uParticleSize:    { value: 1.0 },
+    },
     vertexShader: `
+      uniform float uParticleSize;
       attribute float aSize;
       attribute float aAlpha;
       varying float vAlpha;
       void main() {
         vAlpha = aAlpha;
         vec4 mv = modelViewMatrix * vec4(position, 1.0);
-        gl_PointSize = clamp(aSize * (300.0 / -mv.z), 1.0, 64.0);
+        gl_PointSize = clamp(aSize * uParticleSize * (300.0 / -mv.z), 1.0, 128.0);
         gl_Position = projectionMatrix * mv;
       }
     `,
     fragmentShader: `
+      uniform vec3  uParticleColor;
+      uniform float uParticleOpacity;
       varying float vAlpha;
       void main() {
         float d = length(gl_PointCoord - 0.5);
         if (d > 0.5) discard;
-        float a = smoothstep(0.5, 0.1, d) * vAlpha;
-        gl_FragColor = vec4(0.7, 0.85, 1.0, a);
+        float a = smoothstep(0.5, 0.1, d) * vAlpha * uParticleOpacity;
+        gl_FragColor = vec4(uParticleColor, a);
       }
     `,
   });
 
-  scene.add(new THREE.Points(geo, mat));
+  particleMesh = new THREE.Points(geo, particleMat);
+  scene.add(particleMesh);
 })();
 
 // ── Ferrofluid Orb ───────────────────────────────────────────────────────────
@@ -182,9 +339,24 @@ const GLSL_SIMPLEX = /* glsl */`
 `;
 
 const orbUniforms = {
-  uTime:   { value: 0 },
-  uEnergy: { value: 0.15 },
-  uColor:  { value: new THREE.Color(0x0044dd) },
+  uTime:           { value: 0 },
+  uEnergy:         { value: 0.15 },
+  uColor:          { value: new THREE.Color(0x0044dd) },
+  uValleyColor:    { value: new THREE.Color(0x020918) },
+  uMidColor:       { value: new THREE.Color(0x003bc7) },
+  uPeakColor:      { value: new THREE.Color(0x14f273) },
+  uRimColor:       { value: new THREE.Color(0x0dd966) },
+  uRimHighColor:   { value: new THREE.Color(0x33ffa8) },
+  // noise layer params
+  uN1F: { value: 1.8 }, uN1S: { value: 0.40 }, uN1A: { value: 0.30 },
+  uN2F: { value: 3.5 }, uN2S: { value: 0.70 }, uN2A: { value: 0.14 },
+  uN3F: { value: 7.0 }, uN3S: { value: 1.10 }, uN3A: { value: 0.06 },
+  // lighting params
+  uFresnelPow: { value: 3.0 },
+  uPeakWidth:  { value: 0.5 },
+  uPeakBlend:  { value: 0.65 },
+  uRimBlend:   { value: 0.75 },
+  uBrightness: { value: 0.7 },
 };
 
 const orbMat = new THREE.ShaderMaterial({
@@ -193,13 +365,17 @@ const orbMat = new THREE.ShaderMaterial({
     ${GLSL_SIMPLEX}
     uniform float uTime;
     uniform float uEnergy;
-    varying vec3 vNormal;
-    varying vec3 vWorldPos;
+    uniform float uN1F; uniform float uN1S; uniform float uN1A;
+    uniform float uN2F; uniform float uN2S; uniform float uN2A;
+    uniform float uN3F; uniform float uN3S; uniform float uN3A;
+    varying vec3  vNormal;
+    varying vec3  vWorldPos;
+    varying float vDisp;
 
     float noiseDisp(vec3 q) {
-      return (snoise(q * 1.8 + uTime * 0.40) * 0.30
-            + snoise(q * 3.5 + uTime * 0.70) * 0.14
-            + snoise(q * 7.0 + uTime * 1.10) * 0.06) * uEnergy;
+      return (snoise(q * uN1F + uTime * uN1S) * uN1A
+            + snoise(q * uN2F + uTime * uN2S) * uN2A
+            + snoise(q * uN3F + uTime * uN3S) * uN3A) * uEnergy;
     }
 
     void main() {
@@ -218,6 +394,7 @@ const orbMat = new THREE.ShaderMaterial({
 
       vNormal   = normalize(normalMatrix * displacedNormal);
       vWorldPos = (modelMatrix * vec4(displaced, 1.0)).xyz;
+      vDisp     = disp;
 
       gl_Position = projectionMatrix * modelViewMatrix * vec4(displaced, 1.0);
     }
@@ -225,22 +402,35 @@ const orbMat = new THREE.ShaderMaterial({
   fragmentShader: /* glsl */`
     uniform vec3  uColor;
     uniform float uEnergy;
+    uniform vec3  uValleyColor;
+    uniform vec3  uMidColor;
+    uniform vec3  uPeakColor;
+    uniform vec3  uRimColor;
+    uniform vec3  uRimHighColor;
+    uniform float uFresnelPow;
+    uniform float uPeakWidth;
+    uniform float uPeakBlend;
+    uniform float uRimBlend;
+    uniform float uBrightness;
     varying vec3  vNormal;
     varying vec3  vWorldPos;
+    varying float vDisp;
 
     void main() {
       vec3 viewDir  = normalize(cameraPosition - vWorldPos);
-      float fresnel = pow(1.0 - max(dot(vNormal, viewDir), 0.0), 3.0);
+      float fresnel = pow(1.0 - max(dot(vNormal, viewDir), 0.0), uFresnelPow);
 
-      // Core color blends toward bright tinted-white at the rim
-      vec3 rimColor = mix(uColor * 2.0, vec3(1.0), 0.4);
-      vec3 col = mix(uColor * 0.6, rimColor, fresnel);
+      float safeEnergy = max(uEnergy, 0.001);
+      float peakRaw    = clamp(vDisp / (0.45 * safeEnergy), -1.0, 1.0);
+      float peakFactor = pow(max(peakRaw, 0.0), uPeakWidth);
 
-      // Subtle iridescent shimmer based on normal
-      col += vec3(0.0, 0.02, 0.08) * (1.0 - fresnel) * uEnergy;
+      vec3 peakColor  = mix(uMidColor, uPeakColor, peakFactor * uPeakBlend);
+      vec3 surfaceCol = mix(uValleyColor, peakColor, peakFactor);
 
-      // Overall brightness scales with energy
-      col *= 0.8 + uEnergy * 0.6;
+      vec3 rimColor = mix(uRimColor, uRimHighColor, fresnel);
+      vec3 col      = mix(surfaceCol, rimColor, fresnel * uRimBlend);
+
+      col *= (0.55 + uEnergy * 0.55) * uBrightness;
 
       gl_FragColor = vec4(col, 1.0);
     }
@@ -288,6 +478,144 @@ scene.add(ambient);
     scene.add(plane);
   }
 })();
+
+// ── Electrical Arcs ──────────────────────────────────────────────────────────
+const ARC_COUNT  = 32;
+const ARC_SEGS   = 8;                          // segments per arc
+const ARC_VERTS  = ARC_COUNT * ARC_SEGS * 2;  // 2 verts per segment (LineSegments)
+
+const _arcPosBuf = new Float32Array(ARC_VERTS * 3);
+const _arcAlpBuf = new Float32Array(ARC_VERTS);
+const _arcPts    = new Float32Array((ARC_SEGS + 1) * 3); // scratch: one arc's points
+
+const arcGeo = new THREE.BufferGeometry();
+arcGeo.setAttribute('position', new THREE.BufferAttribute(_arcPosBuf, 3).setUsage(THREE.DynamicDrawUsage));
+arcGeo.setAttribute('aAlpha',   new THREE.BufferAttribute(_arcAlpBuf, 1).setUsage(THREE.DynamicDrawUsage));
+
+const arcMat = new THREE.ShaderMaterial({
+  transparent: true,
+  depthWrite: false,
+  blending: THREE.AdditiveBlending,
+  vertexShader: `
+    attribute float aAlpha;
+    varying float vAlpha;
+    void main() {
+      vAlpha = aAlpha;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    }
+  `,
+  fragmentShader: `
+    varying float vAlpha;
+    void main() {
+      gl_FragColor = vec4(0.55, 0.88, 1.0, vAlpha);
+    }
+  `,
+});
+
+// Arc mesh is a child of particleMesh so it rotates with the star field
+const arcLines = new THREE.LineSegments(arcGeo, arcMat);
+particleMesh.add(arcLines);
+
+// Pool of arc state objects
+const arcPool = Array.from({ length: ARC_COUNT }, () => ({
+  on: false, i1: 0, i2: 0, born: 0, life: 0, seed: 0,
+}));
+
+const PARTICLE_COUNT = 2200;
+let arcMaxDist    = 3.16;  // max connection distance (units); d2 = arcMaxDist²
+let arcLifeBase   = 0.12;  // min arc lifetime (s)
+let arcLifeRange  = 0.45;  // additional random lifetime range (s)
+let arcSpawnBase  = 0.35;  // base spawn probability per frame
+let arcJitter     = 1.0;   // jitter scale multiplier
+let arcFlickerSpd = 48;    // flicker sine frequency
+let arcOpacity    = 0.75;  // peak arc alpha
+let bobSize       = 1.0;   // orb scale
+
+function spawnArc(t) {
+  const slot = arcPool.findIndex(a => !a.on);
+  if (slot < 0 || !particlePositions) return;
+
+  const i1 = (Math.random() * PARTICLE_COUNT) | 0;
+  const x1 = particlePositions[i1*3], y1 = particlePositions[i1*3+1], z1 = particlePositions[i1*3+2];
+
+  let best = arcMaxDist * arcMaxDist, i2 = -1;
+  for (let k = 0; k < 18; k++) {
+    const j = (Math.random() * PARTICLE_COUNT) | 0;
+    if (j === i1) continue;
+    const dx = particlePositions[j*3]-x1, dy = particlePositions[j*3+1]-y1, dz = particlePositions[j*3+2]-z1;
+    const d2 = dx*dx + dy*dy + dz*dz;
+    if (d2 < best) { best = d2; i2 = j; }
+  }
+  if (i2 < 0) return;
+
+  const a = arcPool[slot];
+  a.on   = true;
+  a.i1   = i1;  a.i2 = i2;
+  a.born = t;
+  a.life = arcLifeBase + Math.random() * arcLifeRange;
+  a.seed = Math.random() * 314;
+}
+
+const _ap1 = new THREE.Vector3();
+const _ap2 = new THREE.Vector3();
+
+function updateArcs(t) {
+  for (let ai = 0; ai < ARC_COUNT; ai++) {
+    const arc  = arcPool[ai];
+    const vBase = ai * ARC_SEGS * 2;   // base vertex index
+    const pBase = vBase * 3;            // base float index in position buffer
+
+    if (!arc.on) {
+      for (let v = vBase; v < vBase + ARC_SEGS * 2; v++) _arcAlpBuf[v] = 0;
+      continue;
+    }
+
+    const norm = (t - arc.born) / arc.life;
+    if (norm >= 1.0) { arc.on = false; continue; }
+
+    // Fast fade in, hold, fade out — with high-freq flicker
+    let alpha = norm < 0.12 ? norm / 0.12 : norm > 0.72 ? (1 - norm) / 0.28 : 1.0;
+    alpha *= 0.55 + 0.45 * Math.abs(Math.sin(t * arcFlickerSpd + arc.seed));
+    alpha *= arcOpacity;
+
+    _ap1.set(particlePositions[arc.i1*3], particlePositions[arc.i1*3+1], particlePositions[arc.i1*3+2]);
+    _ap2.set(particlePositions[arc.i2*3], particlePositions[arc.i2*3+1], particlePositions[arc.i2*3+2]);
+
+    const dx = _ap2.x-_ap1.x, dy = _ap2.y-_ap1.y, dz = _ap2.z-_ap1.z;
+    const len = Math.sqrt(dx*dx + dy*dy + dz*dz) || 1;
+    const nx = dx/len, ny = dy/len, nz = dz/len;
+
+    // Build two perpendicular axes for jitter
+    let px, py, pz;
+    if (Math.abs(ny) < 0.9) { const s = 1/Math.sqrt(nz*nz+nx*nx)||1; px=-nz*s; py=0;    pz=nx*s;  }
+    else                     { const s = 1/Math.sqrt(ny*ny+nz*nz)||1; px=0;    py=nz*s; pz=-ny*s; }
+    const qx=ny*pz-nz*py, qy=nz*px-nx*pz, qz=nx*py-ny*px;
+
+    // Generate ARC_SEGS+1 points along the arc with animated jitter
+    for (let i = 0; i <= ARC_SEGS; i++) {
+      const u   = i / ARC_SEGS;
+      const env = Math.sin(u * Math.PI);                                    // taper at endpoints
+      const o1  = Math.sin(t*19 + arc.seed*3.3 + u*12.57) * 0.28 * arcJitter * env * len;
+      const o2  = Math.cos(t*29 + arc.seed*1.9 + u*18.85) * 0.16 * arcJitter * env * len;
+      _arcPts[i*3]   = _ap1.x + dx*u + px*o1 + qx*o2;
+      _arcPts[i*3+1] = _ap1.y + dy*u + py*o1 + qy*o2;
+      _arcPts[i*3+2] = _ap1.z + dz*u + pz*o1 + qz*o2;
+    }
+
+    // Write as segment pairs (LineSegments format)
+    for (let s = 0; s < ARC_SEGS; s++) {
+      const fi  = pBase + s * 6;
+      const vi0 = vBase + s * 2;
+      _arcPosBuf[fi]   = _arcPts[s*3];     _arcPosBuf[fi+1] = _arcPts[s*3+1]; _arcPosBuf[fi+2] = _arcPts[s*3+2];
+      _arcPosBuf[fi+3] = _arcPts[(s+1)*3]; _arcPosBuf[fi+4] = _arcPts[(s+1)*3+1]; _arcPosBuf[fi+5] = _arcPts[(s+1)*3+2];
+      _arcAlpBuf[vi0]   = alpha;
+      _arcAlpBuf[vi0+1] = alpha;
+    }
+  }
+
+  arcGeo.attributes.position.needsUpdate = true;
+  arcGeo.attributes.aAlpha.needsUpdate   = true;
+}
 
 // ── State Machine ────────────────────────────────────────────────────────────
 const STATES = {
@@ -359,13 +687,18 @@ function getMicAmplitude() {
 
 initMic();
 
-const LERP_SPEED = 0.025;
+let LERP_SPEED    = 0.025;
+let particleDrift = 1.0;   // multiplier on drift rotation speeds
+let idleSwaySpeed = 0.08;
+let thinkRotSpeed = 0.35;
+let talkPulseSpd  = 7.0;
+let talkPulseAmt  = 0.12;
+let thinkPulseSpd = 2.5;
+let thinkPulseAmt = 0.08;
 
 function animate() {
   requestAnimationFrame(animate);
   const t = clock.getElapsedTime();
-  controls.update();
-
   // Mic amplitude → listening state
   if (micActive && (state === 'idle' || state === 'listening')) {
     const amp = getMicAmplitude();
@@ -390,20 +723,24 @@ function animate() {
   }
 
   // Particle drift
-  scene.children.forEach(child => {
-    if (child.isPoints) {
-      child.rotation.y = t * 0.012;
-      child.rotation.x = t * 0.005;
-    }
-  });
+  if (particleMesh) {
+    particleMesh.rotation.y = t * 0.012 * particleDrift;
+    particleMesh.rotation.x = t * 0.005 * particleDrift;
+  }
+
+  // Electrical arcs — spawn rate scales with orb energy
+  orbMesh.scale.setScalar(bobSize);
+  const spawnChance = arcSpawnBase + orbUniforms.uEnergy.value * 0.55;
+  if (Math.random() < spawnChance) spawnArc(t);
+  updateArcs(t);
 
   // Talking: simulate pulsing energy
   let energyTarget = targetEnergy;
   if (state === 'talking') {
-    energyTarget = targetEnergy + Math.sin(t * 7.0) * 0.12;
+    energyTarget = targetEnergy + Math.sin(t * talkPulseSpd) * talkPulseAmt;
   }
   if (state === 'thinking') {
-    energyTarget = targetEnergy + Math.sin(t * 2.5) * 0.08;
+    energyTarget = targetEnergy + Math.sin(t * thinkPulseSpd) * thinkPulseAmt;
   }
 
   // Lerp orb uniforms
@@ -417,17 +754,272 @@ function animate() {
 
   // Idle sway
   const idleAmt = state === 'idle' ? 1.0 : 0.15;
-  orbMesh.rotation.y = t * 0.08 * idleAmt;
+  orbMesh.rotation.y = t * idleSwaySpeed * idleAmt;
   orbMesh.rotation.x = Math.sin(t * 0.13) * 0.04 * idleAmt;
 
   // Thinking: faster spin
   if (state === 'thinking') {
-    orbMesh.rotation.y = t * 0.35;
+    orbMesh.rotation.y = t * thinkRotSpeed;
   }
 
   composer.render();
 }
 animate();
+
+// ── Controls Panel ───────────────────────────────────────────────────────────
+document.getElementById('ctrl-toggle').addEventListener('click', () => {
+  document.getElementById('ctrl-panel').classList.toggle('open');
+});
+
+// Tab switching
+document.querySelectorAll('.tab-bar .tab').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-bar .tab').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-body').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+  });
+});
+
+// Helper: slider with live value display
+function sl(id, valId, fn) {
+  const el = document.getElementById(id);
+  el.addEventListener('input', () => {
+    document.getElementById(valId).textContent = parseFloat(el.value).toFixed(
+      el.step.includes('.') ? el.step.split('.')[1].length : 0
+    );
+    fn(parseFloat(el.value));
+  });
+}
+
+// Colors
+document.getElementById('cp-bg').addEventListener('input', e => {
+  scene.background.set(e.target.value);
+  document.body.style.background = e.target.value;
+});
+document.getElementById('cp-ambient').addEventListener('input', e => {
+  ambient.color.set(e.target.value);
+});
+sl('sl-aint', 'v-aint', v => ambient.intensity = v);
+document.getElementById('cp-particles').addEventListener('input', e => {
+  particleMat.uniforms.uParticleColor.value.set(e.target.value);
+});
+document.getElementById('cp-base').addEventListener('input', e => {
+  STATES.idle.color.set(e.target.value);
+  if (state === 'idle') targetColor.set(e.target.value);
+});
+document.getElementById('cp-listening').addEventListener('input', e => {
+  STATES.listening.color.set(e.target.value);
+  if (state === 'listening') targetColor.set(e.target.value);
+});
+document.getElementById('cp-thinking').addEventListener('input', e => {
+  STATES.thinking.color.set(e.target.value);
+  if (state === 'thinking') targetColor.set(e.target.value);
+});
+document.getElementById('cp-talking').addEventListener('input', e => {
+  STATES.talking.color.set(e.target.value);
+  if (state === 'talking') targetColor.set(e.target.value);
+});
+document.getElementById('cp-valley').addEventListener('input', e => {
+  orbUniforms.uValleyColor.value.set(e.target.value);
+});
+document.getElementById('cp-mid').addEventListener('input', e => {
+  orbUniforms.uMidColor.value.set(e.target.value);
+});
+document.getElementById('cp-peak').addEventListener('input', e => {
+  orbUniforms.uPeakColor.value.set(e.target.value);
+});
+document.getElementById('cp-rim').addEventListener('input', e => {
+  orbUniforms.uRimColor.value.set(e.target.value);
+});
+document.getElementById('cp-rim-high').addEventListener('input', e => {
+  orbUniforms.uRimHighColor.value.set(e.target.value);
+});
+
+// Particle sliders
+sl('sl-pdrift', 'v-pdrift', v => particleDrift = v);
+sl('sl-popac',  'v-popac',  v => particleMat.uniforms.uParticleOpacity.value = v);
+sl('sl-psize',  'v-psize',  v => particleMat.uniforms.uParticleSize.value    = v);
+
+// Blob surface sliders
+sl('sl-n1f', 'v-n1f', v => orbUniforms.uN1F.value = v);
+sl('sl-n1s', 'v-n1s', v => orbUniforms.uN1S.value = v);
+sl('sl-n1a', 'v-n1a', v => orbUniforms.uN1A.value = v);
+sl('sl-n2f', 'v-n2f', v => orbUniforms.uN2F.value = v);
+sl('sl-n2s', 'v-n2s', v => orbUniforms.uN2S.value = v);
+sl('sl-n2a', 'v-n2a', v => orbUniforms.uN2A.value = v);
+sl('sl-n3f', 'v-n3f', v => orbUniforms.uN3F.value = v);
+sl('sl-n3s', 'v-n3s', v => orbUniforms.uN3S.value = v);
+sl('sl-n3a', 'v-n3a', v => orbUniforms.uN3A.value = v);
+
+// Blob lighting sliders
+sl('sl-fres', 'v-fres', v => orbUniforms.uFresnelPow.value = v);
+sl('sl-pkwd', 'v-pkwd', v => orbUniforms.uPeakWidth.value  = v);
+sl('sl-pkbl', 'v-pkbl', v => orbUniforms.uPeakBlend.value  = v);
+sl('sl-ribl', 'v-ribl', v => orbUniforms.uRimBlend.value   = v);
+sl('sl-brit', 'v-brit', v => orbUniforms.uBrightness.value = v);
+
+// Blob animation sliders
+sl('sl-lerp', 'v-lerp', v => LERP_SPEED    = v);
+sl('sl-sway', 'v-sway', v => idleSwaySpeed = v);
+sl('sl-thkr', 'v-thkr', v => thinkRotSpeed = v);
+sl('sl-tkps', 'v-tkps', v => talkPulseSpd  = v);
+sl('sl-tkpa', 'v-tkpa', v => talkPulseAmt  = v);
+sl('sl-thps', 'v-thps', v => thinkPulseSpd = v);
+sl('sl-thpa', 'v-thpa', v => thinkPulseAmt = v);
+
+// Arc sliders
+sl('sl-aspn', 'v-aspn', v => arcSpawnBase  = v);
+sl('sl-adst', 'v-adst', v => arcMaxDist    = v);
+sl('sl-alfe', 'v-alfe', v => arcLifeBase   = v);
+sl('sl-alfr', 'v-alfr', v => arcLifeRange  = v);
+sl('sl-ajit', 'v-ajit', v => arcJitter     = v);
+sl('sl-aflk', 'v-aflk', v => arcFlickerSpd = v);
+sl('sl-aopc', 'v-aopc', v => arcOpacity    = v);
+
+// Bob size
+sl('sl-bobs', 'v-bobs', v => bobSize = v);
+
+// ── Export Template ───────────────────────────────────────────────────────────
+function getConfig() {
+  const hex = c => '#' + c.getHexString();
+  return {
+    bg:              hex(scene.background),
+    ambientColor:    hex(ambient.color),
+    ambientIntensity: ambient.intensity,
+    particleColor:   hex(particleMat.uniforms.uParticleColor.value),
+    particleOpacity: particleMat.uniforms.uParticleOpacity.value,
+    particleSize:    particleMat.uniforms.uParticleSize.value,
+    valleyColor:     hex(orbUniforms.uValleyColor.value),
+    midColor:        hex(orbUniforms.uMidColor.value),
+    peakColor:       hex(orbUniforms.uPeakColor.value),
+    rimColor:        hex(orbUniforms.uRimColor.value),
+    rimHighColor:    hex(orbUniforms.uRimHighColor.value),
+    n1f: orbUniforms.uN1F.value, n1s: orbUniforms.uN1S.value, n1a: orbUniforms.uN1A.value,
+    n2f: orbUniforms.uN2F.value, n2s: orbUniforms.uN2S.value, n2a: orbUniforms.uN2A.value,
+    n3f: orbUniforms.uN3F.value, n3s: orbUniforms.uN3S.value, n3a: orbUniforms.uN3A.value,
+    fresnelPow: orbUniforms.uFresnelPow.value,
+    peakWidth:  orbUniforms.uPeakWidth.value,
+    peakBlend:  orbUniforms.uPeakBlend.value,
+    rimBlend:   orbUniforms.uRimBlend.value,
+    brightness: orbUniforms.uBrightness.value,
+    idleColor:      hex(STATES.idle.color),
+    listeningColor: hex(STATES.listening.color),
+    thinkingColor:  hex(STATES.thinking.color),
+    talkingColor:   hex(STATES.talking.color),
+    lerpSpeed: LERP_SPEED, particleDrift, idleSwaySpeed, thinkRotSpeed,
+    talkPulseSpd, talkPulseAmt, thinkPulseSpd, thinkPulseAmt,
+    arcMaxDist, arcLifeBase, arcLifeRange, arcSpawnBase,
+    arcJitter, arcFlickerSpd, arcOpacity, bobSize,
+  };
+}
+
+function syncSlider(id, val) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.value = val;
+  const ve = document.getElementById('v-' + id.slice(3));
+  if (ve) ve.textContent = parseFloat(val).toFixed(
+    el.step.includes('.') ? el.step.split('.')[1].length : 0
+  );
+}
+
+function applyConfig(cfg) {
+  if (cfg.bg)             { scene.background.set(cfg.bg); document.body.style.background = cfg.bg; document.getElementById('cp-bg').value = cfg.bg; }
+  if (cfg.ambientColor)   { ambient.color.set(cfg.ambientColor); document.getElementById('cp-ambient').value = cfg.ambientColor; }
+  if (cfg.ambientIntensity != null) { ambient.intensity = cfg.ambientIntensity; syncSlider('sl-aint', cfg.ambientIntensity); }
+  if (cfg.particleColor)  { particleMat.uniforms.uParticleColor.value.set(cfg.particleColor);   document.getElementById('cp-particles').value = cfg.particleColor; }
+  if (cfg.valleyColor)    { orbUniforms.uValleyColor.value.set(cfg.valleyColor);                 document.getElementById('cp-valley').value    = cfg.valleyColor; }
+  if (cfg.midColor)       { orbUniforms.uMidColor.value.set(cfg.midColor);                       document.getElementById('cp-mid').value       = cfg.midColor; }
+  if (cfg.peakColor)      { orbUniforms.uPeakColor.value.set(cfg.peakColor);                     document.getElementById('cp-peak').value      = cfg.peakColor; }
+  if (cfg.rimColor)       { orbUniforms.uRimColor.value.set(cfg.rimColor);                       document.getElementById('cp-rim').value       = cfg.rimColor; }
+  if (cfg.rimHighColor)   { orbUniforms.uRimHighColor.value.set(cfg.rimHighColor);               document.getElementById('cp-rim-high').value  = cfg.rimHighColor; }
+  if (cfg.idleColor)      { STATES.idle.color.set(cfg.idleColor);           document.getElementById('cp-base').value      = cfg.idleColor;      if (state === 'idle')      targetColor.copy(STATES.idle.color);      }
+  if (cfg.listeningColor) { STATES.listening.color.set(cfg.listeningColor); document.getElementById('cp-listening').value = cfg.listeningColor; if (state === 'listening') targetColor.copy(STATES.listening.color); }
+  if (cfg.thinkingColor)  { STATES.thinking.color.set(cfg.thinkingColor);   document.getElementById('cp-thinking').value  = cfg.thinkingColor;  if (state === 'thinking')  targetColor.copy(STATES.thinking.color);  }
+  if (cfg.talkingColor)   { STATES.talking.color.set(cfg.talkingColor);     document.getElementById('cp-talking').value   = cfg.talkingColor;   if (state === 'talking')   targetColor.copy(STATES.talking.color);   }
+
+  const nums = [
+    ['sl-popac', 'particleOpacity', v => particleMat.uniforms.uParticleOpacity.value = v],
+    ['sl-psize', 'particleSize',    v => particleMat.uniforms.uParticleSize.value    = v],
+    ['sl-pdrift','particleDrift',   v => particleDrift   = v],
+    ['sl-n1f', 'n1f', v => orbUniforms.uN1F.value = v],
+    ['sl-n1s', 'n1s', v => orbUniforms.uN1S.value = v],
+    ['sl-n1a', 'n1a', v => orbUniforms.uN1A.value = v],
+    ['sl-n2f', 'n2f', v => orbUniforms.uN2F.value = v],
+    ['sl-n2s', 'n2s', v => orbUniforms.uN2S.value = v],
+    ['sl-n2a', 'n2a', v => orbUniforms.uN2A.value = v],
+    ['sl-n3f', 'n3f', v => orbUniforms.uN3F.value = v],
+    ['sl-n3s', 'n3s', v => orbUniforms.uN3S.value = v],
+    ['sl-n3a', 'n3a', v => orbUniforms.uN3A.value = v],
+    ['sl-fres', 'fresnelPow', v => orbUniforms.uFresnelPow.value = v],
+    ['sl-pkwd', 'peakWidth',  v => orbUniforms.uPeakWidth.value  = v],
+    ['sl-pkbl', 'peakBlend',  v => orbUniforms.uPeakBlend.value  = v],
+    ['sl-ribl', 'rimBlend',   v => orbUniforms.uRimBlend.value   = v],
+    ['sl-brit', 'brightness', v => orbUniforms.uBrightness.value = v],
+    ['sl-lerp', 'lerpSpeed',  v => LERP_SPEED     = v],
+    ['sl-sway', 'idleSwaySpeed', v => idleSwaySpeed = v],
+    ['sl-thkr', 'thinkRotSpeed', v => thinkRotSpeed = v],
+    ['sl-tkps', 'talkPulseSpd',  v => talkPulseSpd  = v],
+    ['sl-tkpa', 'talkPulseAmt',  v => talkPulseAmt  = v],
+    ['sl-thps', 'thinkPulseSpd', v => thinkPulseSpd = v],
+    ['sl-thpa', 'thinkPulseAmt', v => thinkPulseAmt = v],
+    ['sl-aspn', 'arcSpawnBase',  v => arcSpawnBase  = v],
+    ['sl-adst', 'arcMaxDist',    v => arcMaxDist    = v],
+    ['sl-alfe', 'arcLifeBase',   v => arcLifeBase   = v],
+    ['sl-alfr', 'arcLifeRange',  v => arcLifeRange  = v],
+    ['sl-ajit', 'arcJitter',     v => arcJitter     = v],
+    ['sl-aflk', 'arcFlickerSpd', v => arcFlickerSpd = v],
+    ['sl-aopc', 'arcOpacity',    v => arcOpacity    = v],
+    ['sl-bobs', 'bobSize',       v => bobSize       = v],
+  ];
+  for (const [slId, key, fn] of nums) {
+    if (cfg[key] != null) { syncSlider(slId, cfg[key]); fn(cfg[key]); }
+  }
+}
+
+document.getElementById('btn-export').addEventListener('click', async () => {
+  const cfg = getConfig();
+  const src = await fetch(location.href).then(r => r.text());
+  const tag = `<script>window.BOB_CONFIG=${JSON.stringify(cfg)};<\/script>`;
+  const out = src.replace('</head>', tag + '\n</head>');
+  const blob = new Blob([out], { type: 'text/html' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'bob-blob.html';
+  a.click();
+  URL.revokeObjectURL(a.href);
+});
+
+document.getElementById('btn-import').addEventListener('click', () => {
+  document.getElementById('file-import').click();
+});
+
+document.getElementById('file-import').addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const text = ev.target.result;
+    let cfg = null;
+    // JSON file: parse directly
+    if (file.name.endsWith('.json')) {
+      try { cfg = JSON.parse(text); } catch { alert('Invalid JSON file.'); return; }
+    } else {
+      // HTML export: extract window.BOB_CONFIG={...};
+      const m = text.match(/window\.BOB_CONFIG\s*=\s*(\{[\s\S]*?\});/);
+      if (m) { try { cfg = JSON.parse(m[1]); } catch { alert('Could not parse config in HTML file.'); return; } }
+    }
+    if (!cfg) { alert('No Bob config found in this file.'); return; }
+    applyConfig(cfg);
+  };
+  reader.readAsText(file);
+  // Reset so the same file can be re-imported if needed
+  e.target.value = '';
+});
+
+// Load exported config if present (injected by export)
+if (window.BOB_CONFIG) applyConfig(window.BOB_CONFIG);
 
 </script>
 </body>
