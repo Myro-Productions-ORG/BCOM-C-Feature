@@ -72,6 +72,7 @@ window.addEventListener('resize', () => {
   camera.updateProjectionMatrix();
   renderer.setSize(innerWidth, innerHeight);
   composer.setSize(innerWidth, innerHeight);
+  bloomPass.setSize(innerWidth, innerHeight);
 });
 
 // ── Clock & animate ──────────────────────────────────────────────────────────
@@ -111,7 +112,7 @@ const clock = new THREE.Clock();
       void main() {
         vAlpha = aAlpha;
         vec4 mv = modelViewMatrix * vec4(position, 1.0);
-        gl_PointSize = aSize * (300.0 / -mv.z);
+        gl_PointSize = clamp(aSize * (300.0 / -mv.z), 1.0, 64.0);
         gl_Position = projectionMatrix * mv;
       }
     `,
