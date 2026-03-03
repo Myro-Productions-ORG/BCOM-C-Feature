@@ -34,8 +34,7 @@ async def test_outbound_call_uses_twiml_url():
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             await client.post("/calls/outbound", json={"to": "+15550000001"})
 
-    call_args = mock_client.calls.create.call_args
-    assert "/twiml/inbound" in call_args.kwargs.get("url", call_args.args[0] if call_args.args else "")
+    assert "/twiml/inbound" in mock_client.calls.create.call_args.kwargs["url"]
 
 
 @pytest.mark.asyncio
