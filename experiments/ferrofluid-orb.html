@@ -285,12 +285,48 @@ scene.add(orbMesh);
   }
 })();
 
+// ── State Machine ────────────────────────────────────────────────────────────
+const STATES = {
+  idle:      { color: new THREE.Color(0x0044dd), energy: 0.15, bloomStr: 1.1 },
+  listening: { color: new THREE.Color(0x0099ff), energy: 0.50, bloomStr: 1.4 },
+  thinking:  { color: new THREE.Color(0xff6600), energy: 0.62, bloomStr: 1.6 },
+  talking:   { color: new THREE.Color(0x00ff88), energy: 0.78, bloomStr: 1.8 },
+};
+
+let state        = 'idle';
+let targetColor  = STATES.idle.color.clone();
+let targetEnergy = STATES.idle.energy;
+let targetBloom  = STATES.idle.bloomStr;
+const lerpColor  = new THREE.Color(0x0044dd);
+
+function setState(name) {
+  if (!STATES[name]) return;
+  state = name;
+  targetColor.copy(STATES[name].color);
+  targetEnergy = STATES[name].energy;
+  targetBloom  = STATES[name].bloomStr;
+  document.getElementById('status').textContent =
+    name === 'idle'      ? 'idle — T: think · S: speak · I: idle' :
+    name === 'listening' ? 'listening...' :
+    name === 'thinking'  ? 'thinking...' :
+                           'speaking...';
+}
+
+window.addEventListener('keydown', (e) => {
+  const k = e.key.toLowerCase();
+  if (k === 't') setState('thinking');
+  if (k === 's') setState('talking');
+  if (k === 'i') setState('idle');
+});
+
+const LERP_SPEED = 0.025;
+
 function animate() {
   requestAnimationFrame(animate);
   const t = clock.getElapsedTime();
   controls.update();
 
-  // slow particle drift — rotate around Y very slightly
+  // Particle drift
   scene.children.forEach(child => {
     if (child.isPoints) {
       child.rotation.y = t * 0.012;
@@ -298,7 +334,23 @@ function animate() {
     }
   });
 
+  // Talking: simulate pulsing energy
+  let energyTarget = targetEnergy;
+  if (state === 'talking') {
+    energyTarget = targetEnergy + Math.sin(t * 7.0) * 0.12;
+  }
+  if (state === 'thinking') {
+    energyTarget = targetEnergy + Math.sin(t * 2.5) * 0.08;
+  }
+
+  // Lerp orb uniforms
+  orbUniforms.uEnergy.value += (energyTarget - orbUniforms.uEnergy.value) * LERP_SPEED * 3;
+  lerpColor.lerp(targetColor, LERP_SPEED * 2);
+  orbUniforms.uColor.value.copy(lerpColor);
   orbUniforms.uTime.value = t;
+
+  // Lerp bloom
+  bloomPass.strength += (targetBloom - bloomPass.strength) * LERP_SPEED * 2;
 
   composer.render();
 }
