@@ -184,7 +184,7 @@ const GLSL_SIMPLEX = /* glsl */`
 const orbUniforms = {
   uTime:   { value: 0 },
   uEnergy: { value: 0.15 },
-  uColor:  { value: new THREE.Color(0x0055ff) },
+  uColor:  { value: new THREE.Color(0x0044dd) },
 };
 
 const orbMat = new THREE.ShaderMaterial({
@@ -297,7 +297,7 @@ let state        = 'idle';
 let targetColor  = STATES.idle.color.clone();
 let targetEnergy = STATES.idle.energy;
 let targetBloom  = STATES.idle.bloomStr;
-const lerpColor  = new THREE.Color(0x0044dd);
+const lerpColor = STATES.idle.color.clone();
 
 function setState(name) {
   if (!STATES[name]) return;
