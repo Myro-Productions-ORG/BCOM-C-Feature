@@ -251,6 +251,10 @@ const orbGeo  = new THREE.SphereGeometry(1, 128, 128);
 const orbMesh = new THREE.Mesh(orbGeo, orbMat);
 scene.add(orbMesh);
 
+// Subtle fill light so particles catch a little warmth
+const ambient = new THREE.AmbientLight(0x0a1530, 0.4);
+scene.add(ambient);
+
 // ── Mist Ring ────────────────────────────────────────────────────────────────
 (function buildMist() {
   // Build a radial gradient texture via canvas
@@ -410,6 +414,16 @@ function animate() {
 
   // Lerp bloom
   bloomPass.strength += (targetBloom - bloomPass.strength) * LERP_SPEED * 2;
+
+  // Idle sway
+  const idleAmt = state === 'idle' ? 1.0 : 0.15;
+  orbMesh.rotation.y = t * 0.08 * idleAmt;
+  orbMesh.rotation.x = Math.sin(t * 0.13) * 0.04 * idleAmt;
+
+  // Thinking: faster spin
+  if (state === 'thinking') {
+    orbMesh.rotation.y = t * 0.35;
+  }
 
   composer.render();
 }
