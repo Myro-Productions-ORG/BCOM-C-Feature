@@ -62,3 +62,33 @@ async def test_respond_passes_full_history_to_claude():
             pass
 
     assert captured_history[0] == {"role": "user", "content": "First"}
+
+
+@pytest.mark.asyncio
+async def test_history_committed_before_sentinel():
+    """History is appended before the sentinel yield so early exits don't lose it."""
+    session = CallSession(call_sid="CA123")
+
+    async def fake_stream(_):
+        yield "Done."
+
+    with patch.object(session, "_stream_claude", fake_stream):
+        async for token, is_last in session.respond("Hey"):
+            if is_last:
+                # history must already be committed at this point
+                assert len(session.history) == 2
+                break
+
+    assert session.history[1] == {"role": "assistant", "content": "Done."}
+
+
+def test_temperature_zero_not_overridden():
+    """temperature=0 must not fall through to the config default."""
+    session = CallSession(call_sid="CA123", temperature=0.0)
+    assert session._temperature == 0.0
+
+
+def test_max_tokens_override():
+    """Explicit max_tokens must be respected."""
+    session = CallSession(call_sid="CA123", max_tokens=128)
+    assert session._max_tokens == 128

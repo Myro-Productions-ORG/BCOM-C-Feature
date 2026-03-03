@@ -26,9 +26,9 @@ class CallSession:
     ):
         self.call_sid = call_sid
         self.history: list[dict] = []
-        self._model = model or settings.claude_model
-        self._temperature = temperature or settings.claude_temperature
-        self._max_tokens = max_tokens or settings.claude_max_tokens
+        self._model = model if model is not None else settings.claude_model
+        self._temperature = temperature if temperature is not None else settings.claude_temperature
+        self._max_tokens = max_tokens if max_tokens is not None else settings.claude_max_tokens
         self._client = anthropic.AsyncAnthropic(api_key=settings.anthropic_api_key)
 
     async def respond(self, user_text: str) -> AsyncIterator[tuple[str, bool]]:
@@ -40,9 +40,9 @@ class CallSession:
             full_response += token
             yield token, False
 
-        yield "", True
         self.history.append({"role": "assistant", "content": full_response})
         logger.info("[%s] Bob: %s", self.call_sid, full_response)
+        yield "", True
 
     async def _stream_claude(self, history: list[dict]) -> AsyncIterator[str]:
         """Stream text tokens from Claude."""
