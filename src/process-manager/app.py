@@ -19,6 +19,7 @@ VENV_PYTHON = str(REPO_ROOT / "src/orchestrator/venv/bin/python")
 RUST_BIN = str(REPO_ROOT / "src/desktop-client/target/release/bob-desktop-client")
 
 MEDIA_KEY_TAP = str(REPO_ROOT / "src/media-key-tap/media-key-tap")
+TELEPHONY_PYTHON = str(REPO_ROOT / "src/telephony_adapter/venv/bin/python")
 
 SERVICES = {
     "orchestrator": {
@@ -45,6 +46,15 @@ SERVICES = {
         "cmd": [MEDIA_KEY_TAP, "--url", "http://127.0.0.1:7766/api/toggle-active"],
         "env_extra": {},
         "port": None,
+    },
+    "telephony": {
+        "label": "Telephony Adapter",
+        "cmd": [
+            TELEPHONY_PYTHON, "-m", "uvicorn", "telephony_adapter.main:app",
+            "--host", "0.0.0.0", "--port", "8767",
+        ],
+        "env_extra": {"PYTHONPATH": str(REPO_ROOT / "src")},
+        "port": 8767,
     },
 }
 
