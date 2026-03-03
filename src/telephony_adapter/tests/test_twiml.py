@@ -1,4 +1,8 @@
 import xml.etree.ElementTree as ET
+
+import pytest
+from httpx import AsyncClient, ASGITransport
+
 from telephony_adapter.twiml import build_conversation_relay_twiml
 
 
@@ -32,8 +36,15 @@ def test_twiml_default_greeting():
     assert "Bob" in xml  # default greeting mentions Bob
 
 
-import pytest
-from httpx import AsyncClient, ASGITransport
+def test_twiml_escapes_special_chars():
+    xml = build_conversation_relay_twiml(
+        ws_url='wss://example.com/ws?a=1&b=2',
+        voice_id="v123",
+        greeting='Say "hi"',
+    )
+    ET.fromstring(xml)  # must still be valid XML after escaping
+    assert "&amp;" in xml   # & in URL is escaped
+    assert "&quot;" in xml  # " in greeting is escaped
 
 
 @pytest.mark.asyncio
