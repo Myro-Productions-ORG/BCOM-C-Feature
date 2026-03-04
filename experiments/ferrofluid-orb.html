@@ -148,8 +148,7 @@
 
     <div class="cp-section">Blob — Animation</div>
     <div class="sl-row"><div class="sl-head"><label>Transition spd</label><span id="v-lerp">0.025</span></div><input type="range" id="sl-lerp"   min="0.002" max="0.15" step="0.002" value="0.025"></div>
-    <div class="sl-row"><div class="sl-head"><label>Idle sway</label>    <span id="v-sway">0.08</span></div><input type="range"  id="sl-sway"   min="0"     max="0.4"  step="0.005" value="0.08"></div>
-    <div class="sl-row"><div class="sl-head"><label>Think rotation</label><span id="v-thkr">0.35</span></div><input type="range" id="sl-thkr"   min="0"     max="1.5"  step="0.01"  value="0.35"></div>
+    <div class="sl-row"><div class="sl-head"><label>Orb rotation</label>  <span id="v-oroty">0</span></div><input type="range" id="sl-oroty" min="0" max="360" step="1" value="0"></div>
     <div class="sl-row"><div class="sl-head"><label>Talk pulse spd</label><span id="v-tkps">7.0</span></div><input type="range"  id="sl-tkps"   min="0.5"   max="20"   step="0.5"   value="7.0"></div>
     <div class="sl-row"><div class="sl-head"><label>Talk pulse amt</label><span id="v-tkpa">0.12</span></div><input type="range" id="sl-tkpa"   min="0"     max="0.5"  step="0.01"  value="0.12"></div>
     <div class="sl-row"><div class="sl-head"><label>Think pulse spd</label><span id="v-thps">2.5</span></div><input type="range" id="sl-thps"  min="0.2"   max="10"   step="0.1"   value="2.5"></div>
@@ -784,8 +783,7 @@ initMic();
 
 let LERP_SPEED    = 0.025;
 let particleDrift = 1.0;   // multiplier on drift rotation speeds
-let idleSwaySpeed = 0.08;
-let thinkRotSpeed = 0.35;
+let orbRotationY  = 0;  // radians — set by slider, no auto-spin
 let talkPulseSpd  = 7.0;
 let talkPulseAmt  = 0.12;
 let thinkPulseSpd = 2.5;
@@ -848,15 +846,9 @@ function animate() {
   // Lerp bloom
   bloomPass.strength += (targetBloom - bloomPass.strength) * LERP_SPEED * 2;
 
-  // Idle sway
-  const idleAmt = state === 'idle' ? 1.0 : 0.15;
-  orbMesh.rotation.y = t * idleSwaySpeed * idleAmt;
-  orbMesh.rotation.x = Math.sin(t * 0.13) * 0.04 * idleAmt;
-
-  // Thinking: faster spin
-  if (state === 'thinking') {
-    orbMesh.rotation.y = t * thinkRotSpeed;
-  }
+  // Static rotation — user-controlled, no auto-spin
+  orbMesh.rotation.y = orbRotationY;
+  orbMesh.rotation.x = 0;
 
   composer.render();
 }
@@ -958,8 +950,7 @@ sl('sl-brit', 'v-brit', v => orbUniforms.uBrightness.value = v);
 
 // Blob animation sliders
 sl('sl-lerp', 'v-lerp', v => LERP_SPEED    = v);
-sl('sl-sway', 'v-sway', v => idleSwaySpeed = v);
-sl('sl-thkr', 'v-thkr', v => thinkRotSpeed = v);
+sl('sl-oroty', 'v-oroty', v => orbRotationY = v * Math.PI / 180);
 sl('sl-tkps', 'v-tkps', v => talkPulseSpd  = v);
 sl('sl-tkpa', 'v-tkpa', v => talkPulseAmt  = v);
 sl('sl-thps', 'v-thps', v => thinkPulseSpd = v);
@@ -1005,7 +996,7 @@ function getConfig() {
     listeningColor: hex(STATES.listening.color),
     thinkingColor:  hex(STATES.thinking.color),
     talkingColor:   hex(STATES.talking.color),
-    lerpSpeed: LERP_SPEED, particleDrift, idleSwaySpeed, thinkRotSpeed,
+    lerpSpeed: LERP_SPEED, particleDrift, orbRotationDeg: orbRotationY * 180 / Math.PI,
     talkPulseSpd, talkPulseAmt, thinkPulseSpd, thinkPulseAmt,
     arcMaxDist, arcLifeBase, arcLifeRange, arcSpawnBase,
     arcJitter, arcFlickerSpd, arcOpacity, bobSize,
@@ -1057,8 +1048,7 @@ function applyConfig(cfg) {
     ['sl-ribl', 'rimBlend',   v => orbUniforms.uRimBlend.value   = v],
     ['sl-brit', 'brightness', v => orbUniforms.uBrightness.value = v],
     ['sl-lerp', 'lerpSpeed',  v => LERP_SPEED     = v],
-    ['sl-sway', 'idleSwaySpeed', v => idleSwaySpeed = v],
-    ['sl-thkr', 'thinkRotSpeed', v => thinkRotSpeed = v],
+    ['sl-oroty', 'orbRotationDeg', v => orbRotationY = v * Math.PI / 180],
     ['sl-tkps', 'talkPulseSpd',  v => talkPulseSpd  = v],
     ['sl-tkpa', 'talkPulseAmt',  v => talkPulseAmt  = v],
     ['sl-thps', 'thinkPulseSpd', v => thinkPulseSpd = v],
