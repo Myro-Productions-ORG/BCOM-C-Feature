@@ -406,9 +406,13 @@ const orbMat = new THREE.ShaderMaterial({
     uniform float uN1F; uniform float uN1S; uniform float uN1A;
     uniform float uN2F; uniform float uN2S; uniform float uN2A;
     uniform float uN3F; uniform float uN3S; uniform float uN3A;
+    uniform sampler2D uFreqTex;
+    uniform float uSpectrumGain;
     varying vec3  vNormal;
     varying vec3  vWorldPos;
     varying float vDisp;
+    varying float vFreqAmp;
+    varying float vEdgeFactor;
 
     float noiseDisp(vec3 q) {
       return (snoise(q * uN1F + uTime * uN1S) * uN1A
@@ -433,6 +437,30 @@ const orbMat = new THREE.ShaderMaterial({
       vNormal   = normalize(normalMatrix * displacedNormal);
       vWorldPos = (modelMatrix * vec4(displaced, 1.0)).xyz;
       vDisp     = disp;
+
+    // ── Spectrum ring deformation ─────────────────────────────────────────
+    // Clockwise angle from +Y axis (top = 12 o'clock) in [0, 2PI)
+    const float PI     = 3.14159265358979;
+    const float TWO_PI = 6.28318530717959;
+    float angle = mod(PI * 0.5 - atan(position.y, position.x), TWO_PI);
+    float bandFrac = angle / TWO_PI;  // 0=top, 0.25=right, 0.5=bottom, 0.75=left
+
+    // Sample the frequency texture for this angular position
+    float fAmp = texture2D(uFreqTex, vec2(bandFrac, 0.5)).r * uSpectrumGain * uEnergy * 2.0;
+
+    // Silhouette proximity — max at z≈0 (equatorial ring when front-facing), zero at poles
+    float eFactor = pow(1.0 - abs(position.z), 3.0);
+
+    // Radial outward direction in XY plane (safe against pole singularity)
+    float rxy = length(position.xy);
+    vec2 radialDir = (rxy > 0.001) ? position.xy / rxy : vec2(0.0);
+
+    // Displace vertices radially outward at their frequency amplitude
+    displaced += vec3(radialDir, 0.0) * fAmp * eFactor * 0.5;
+
+    // Pass to fragment shader
+    vFreqAmp    = fAmp;
+    vEdgeFactor = eFactor;
 
       gl_Position = projectionMatrix * modelViewMatrix * vec4(displaced, 1.0);
     }
