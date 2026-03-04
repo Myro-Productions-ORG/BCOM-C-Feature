@@ -481,6 +481,8 @@ const orbMat = new THREE.ShaderMaterial({
     varying vec3  vNormal;
     varying vec3  vWorldPos;
     varying float vDisp;
+    varying float vFreqAmp;
+    varying float vEdgeFactor;
 
     void main() {
       vec3 viewDir  = normalize(cameraPosition - vWorldPos);
@@ -497,6 +499,11 @@ const orbMat = new THREE.ShaderMaterial({
       vec3 col      = mix(surfaceCol, rimColor, fresnel * uRimBlend);
 
       col *= (0.55 + uEnergy * 0.55) * uBrightness;
+
+      // Spectrum glow — brighten active frequency bands at the silhouette
+      float specGlow = vFreqAmp * vEdgeFactor;
+      col += vec3(0.4, 0.7, 1.0) * specGlow * 0.8;   // cool blue-white additive
+      col += uColor * specGlow * 0.4;                  // tinted by current state color
 
       gl_FragColor = vec4(col, 1.0);
     }
