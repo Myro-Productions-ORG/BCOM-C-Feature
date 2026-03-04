@@ -754,7 +754,6 @@ async function initMic() {
 
 function getMicAmplitude() {
   if (!analyser) return 0;
-  analyser.getByteFrequencyData(freqData);
   let sum = 0;
   for (let i = 0; i < freqData.length; i++) sum += freqData[i] * freqData[i];
   return Math.sqrt(sum / freqData.length) / 255;
@@ -795,6 +794,7 @@ let thinkPulseAmt = 0.08;
 function animate() {
   requestAnimationFrame(animate);
   const t = clock.getElapsedTime();
+  updateFreqTexture();   // populates freqData once per frame — must run before any consumer
   // Mic amplitude → listening state
   if (micActive && (state === 'idle' || state === 'listening')) {
     const amp = getMicAmplitude();
@@ -843,7 +843,6 @@ function animate() {
   orbUniforms.uEnergy.value += (energyTarget - orbUniforms.uEnergy.value) * LERP_SPEED * 3;
   lerpColor.lerp(targetColor, LERP_SPEED * 2);
   orbUniforms.uColor.value.copy(lerpColor);
-  updateFreqTexture();
   orbUniforms.uTime.value = t;
 
   // Lerp bloom
