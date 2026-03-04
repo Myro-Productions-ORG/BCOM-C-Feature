@@ -128,22 +128,23 @@
     <div class="sl-row"><div class="sl-head"><label>Size scale</label> <span id="v-psize">1.0</span></div><input type="range" id="sl-psize"    min="0.2" max="4"  step="0.1"  value="1.0"></div>
 
     <div class="cp-section">Blob — Surface</div>
+    <div class="sl-row"><div class="sl-head"><label>Spectrum gain</label><span id="v-sgain">1.00</span></div><input type="range" id="sl-sgain" min="0" max="3" step="0.05" value="1.0"></div>
     <div class="sl-row"><div class="sl-head"><label>L1 frequency</label><span id="v-n1f">1.8</span></div><input type="range" id="sl-n1f" min="0.2" max="6"   step="0.1"  value="1.8"></div>
     <div class="sl-row"><div class="sl-head"><label>L1 speed</label>    <span id="v-n1s">0.4</span></div><input type="range" id="sl-n1s" min="0"   max="3"   step="0.05" value="0.4"></div>
-    <div class="sl-row"><div class="sl-head"><label>L1 amplitude</label><span id="v-n1a">0.30</span></div><input type="range" id="sl-n1a" min="0"  max="2.0" step="0.01" value="0.30"></div>
+    <div class="sl-row"><div class="sl-head"><label>L1 amplitude</label><span id="v-n1a">0.02</span></div><input type="range" id="sl-n1a" min="0"  max="2.0" step="0.01" value="0.02"></div>
     <div class="sl-row"><div class="sl-head"><label>L2 frequency</label><span id="v-n2f">3.5</span></div><input type="range" id="sl-n2f" min="0.5" max="12"  step="0.1"  value="3.5"></div>
     <div class="sl-row"><div class="sl-head"><label>L2 speed</label>    <span id="v-n2s">0.7</span></div><input type="range" id="sl-n2s" min="0"   max="3"   step="0.05" value="0.7"></div>
-    <div class="sl-row"><div class="sl-head"><label>L2 amplitude</label><span id="v-n2a">0.14</span></div><input type="range" id="sl-n2a" min="0"  max="1.2" step="0.01" value="0.14"></div>
+    <div class="sl-row"><div class="sl-head"><label>L2 amplitude</label><span id="v-n2a">0.01</span></div><input type="range" id="sl-n2a" min="0"  max="1.2" step="0.01" value="0.01"></div>
     <div class="sl-row"><div class="sl-head"><label>L3 frequency</label><span id="v-n3f">7.0</span></div><input type="range" id="sl-n3f" min="1"   max="20"  step="0.5"  value="7.0"></div>
     <div class="sl-row"><div class="sl-head"><label>L3 speed</label>    <span id="v-n3s">1.1</span></div><input type="range" id="sl-n3s" min="0"   max="4"   step="0.05" value="1.1"></div>
-    <div class="sl-row"><div class="sl-head"><label>L3 amplitude</label><span id="v-n3a">0.06</span></div><input type="range" id="sl-n3a" min="0"  max="0.6" step="0.01" value="0.06"></div>
+    <div class="sl-row"><div class="sl-head"><label>L3 amplitude</label><span id="v-n3a">0.005</span></div><input type="range" id="sl-n3a" min="0"  max="0.6" step="0.01" value="0.005"></div>
 
     <div class="cp-section">Blob — Lighting</div>
     <div class="sl-row"><div class="sl-head"><label>Fresnel power</label><span id="v-fres">3.0</span></div><input type="range" id="sl-fres"  min="0.5" max="10"  step="0.1"  value="3.0"></div>
     <div class="sl-row"><div class="sl-head"><label>Peak width</label>  <span id="v-pkwd">0.5</span></div><input type="range" id="sl-pkwd"  min="0.1" max="2"   step="0.05" value="0.5"></div>
     <div class="sl-row"><div class="sl-head"><label>Peak blend</label>  <span id="v-pkbl">0.65</span></div><input type="range" id="sl-pkbl" min="0"   max="1"   step="0.01" value="0.65"></div>
     <div class="sl-row"><div class="sl-head"><label>Rim blend</label>   <span id="v-ribl">0.75</span></div><input type="range" id="sl-ribl" min="0"   max="1"   step="0.01" value="0.75"></div>
-    <div class="sl-row"><div class="sl-head"><label>Brightness</label>  <span id="v-brit">0.7</span></div><input type="range" id="sl-brit"  min="0"   max="2"   step="0.02" value="0.7"></div>
+    <div class="sl-row"><div class="sl-head"><label>Brightness</label>  <span id="v-brit">0.5</span></div><input type="range" id="sl-brit"  min="0"   max="2"   step="0.02" value="0.5"></div>
 
     <div class="cp-section">Blob — Animation</div>
     <div class="sl-row"><div class="sl-head"><label>Transition spd</label><span id="v-lerp">0.025</span></div><input type="range" id="sl-lerp"   min="0.002" max="0.15" step="0.002" value="0.025"></div>
@@ -384,15 +385,15 @@ const orbUniforms = {
   uRimColor:       { value: new THREE.Color(0x0dd966) },
   uRimHighColor:   { value: new THREE.Color(0x33ffa8) },
   // noise layer params
-  uN1F: { value: 1.8 }, uN1S: { value: 0.40 }, uN1A: { value: 0.30 },
-  uN2F: { value: 3.5 }, uN2S: { value: 0.70 }, uN2A: { value: 0.14 },
-  uN3F: { value: 7.0 }, uN3S: { value: 1.10 }, uN3A: { value: 0.06 },
+  uN1F: { value: 1.8 }, uN1S: { value: 0.40 }, uN1A: { value: 0.02 },
+  uN2F: { value: 3.5 }, uN2S: { value: 0.70 }, uN2A: { value: 0.01 },
+  uN3F: { value: 7.0 }, uN3S: { value: 1.10 }, uN3A: { value: 0.005 },
   // lighting params
   uFresnelPow: { value: 3.0 },
   uPeakWidth:  { value: 0.5 },
   uPeakBlend:  { value: 0.65 },
   uRimBlend:   { value: 0.75 },
-  uBrightness: { value: 0.7 },
+  uBrightness: { value: 0.5 },
   uFreqTex:      { value: freqTex },
   uSpectrumGain: { value: 1.0 },
 };
@@ -938,6 +939,7 @@ sl('sl-popac',  'v-popac',  v => particleMat.uniforms.uParticleOpacity.value = v
 sl('sl-psize',  'v-psize',  v => particleMat.uniforms.uParticleSize.value    = v);
 
 // Blob surface sliders
+sl('sl-sgain', 'v-sgain', v => orbUniforms.uSpectrumGain.value = v);
 sl('sl-n1f', 'v-n1f', v => orbUniforms.uN1F.value = v);
 sl('sl-n1s', 'v-n1s', v => orbUniforms.uN1S.value = v);
 sl('sl-n1a', 'v-n1a', v => orbUniforms.uN1A.value = v);
@@ -999,6 +1001,7 @@ function getConfig() {
     peakBlend:  orbUniforms.uPeakBlend.value,
     rimBlend:   orbUniforms.uRimBlend.value,
     brightness: orbUniforms.uBrightness.value,
+    spectrumGain: orbUniforms.uSpectrumGain.value,
     idleColor:      hex(STATES.idle.color),
     listeningColor: hex(STATES.listening.color),
     thinkingColor:  hex(STATES.thinking.color),
@@ -1039,6 +1042,7 @@ function applyConfig(cfg) {
     ['sl-popac', 'particleOpacity', v => particleMat.uniforms.uParticleOpacity.value = v],
     ['sl-psize', 'particleSize',    v => particleMat.uniforms.uParticleSize.value    = v],
     ['sl-pdrift','particleDrift',   v => particleDrift   = v],
+    ['sl-sgain', 'spectrumGain', v => orbUniforms.uSpectrumGain.value = v],
     ['sl-n1f', 'n1f', v => orbUniforms.uN1F.value = v],
     ['sl-n1s', 'n1s', v => orbUniforms.uN1S.value = v],
     ['sl-n1a', 'n1a', v => orbUniforms.uN1A.value = v],
