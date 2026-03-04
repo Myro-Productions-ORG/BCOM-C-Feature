@@ -382,12 +382,10 @@ h1 .sub {
 
 /* ─── LAYOUT ──────────────────────────────────────────────────── */
 main {
-  padding: 28px 32px;
+  padding: 20px 24px;
   display: grid;
-  grid-template-columns: 1fr 1fr 280px;
-  gap: 20px;
-  max-width: 1400px;
-  margin: 0 auto;
+  grid-template-columns: 1fr 1fr 260px;
+  gap: 16px;
 }
 
 /* ─── STATUS BAR ──────────────────────────────────────────────── */
@@ -459,12 +457,13 @@ main {
 }
 
 .card-head {
-  padding: 18px 22px 14px;
+  padding: 14px 18px 12px;
   border-bottom: 1px solid var(--border);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
 .svc-meta {
@@ -518,7 +517,7 @@ main {
 }
 
 .log-pane {
-  height: 380px;
+  height: 220px;
   overflow-y: auto;
   padding: 14px 18px;
   background: var(--log-bg);
@@ -555,7 +554,8 @@ main {
 /* ─── SETTINGS PANEL ─────────────────────────────────────────── */
 .settings-panel {
   grid-column: 3;
-  grid-row: 2 / -1;
+  grid-row: 2 / span 2;
+  align-self: start;
   background: var(--surface);
   border: 1px solid var(--border);
   display: flex;
@@ -674,7 +674,7 @@ main {
   <div class="brand">
     <div class="logo-mark"></div>
     <div>
-      <h1>BOB CONTROL <span class="sub">Voice Pipeline — Phase 1</span></h1>
+      <h1>BOB CONTROL <span class="sub">Voice Pipeline — Phase 2</span></h1>
     </div>
   </div>
   <div class="global-btns">
@@ -698,6 +698,10 @@ main {
     <div class="status-pill" id="pill-client">
       <div class="led off" id="led-client"></div>
       <span id="txt-client">Desktop Client</span>
+    </div>
+    <div class="status-pill" id="pill-telephony">
+      <div class="led off" id="led-telephony"></div>
+      <span id="txt-telephony">Telephony</span>
     </div>
   </div>
 
@@ -743,24 +747,24 @@ main {
       <div class="log-pane" id="log-client"><div class="log-empty">No output yet.</div></div>
     </div>
   </div>
-  <!-- Hotkey daemon card — spans full width -->
-  <div class="card" id="card-hotkey" style="grid-column:1/3">
+  <!-- Hotkey daemon card -->
+  <div class="card" id="card-hotkey">
     <div class="card-head">
       <div class="svc-meta">
         <div class="svc-led" id="svcled-hotkey"></div>
         <div>
           <div class="svc-name">Media Key Tap</div>
           <div class="svc-state" id="state-hotkey">Stopped <span class="svc-pid" id="pid-hotkey"></span></div>
+          <div style="font-size:9px;color:#444;letter-spacing:0.08em;margin-top:2px">META GLASSES → TOGGLE</div>
         </div>
       </div>
       <div class="card-actions">
-        <span style="font-size:10px;color:#555;letter-spacing:0.08em;padding-right:8px">META GLASSES TAP → TOGGLE ACTIVE</span>
         <button class="btn btn-green" onclick="startService('hotkey')">&#9654; Start</button>
         <button class="btn btn-red" onclick="stopService('hotkey')">&#9632; Stop</button>
       </div>
     </div>
     <div class="log-wrap">
-      <div class="log-pane" id="log-hotkey" style="height:120px"><div class="log-empty">No output yet.</div></div>
+      <div class="log-pane" id="log-hotkey"><div class="log-empty">No output yet.</div></div>
     </div>
   </div>
   <div class="card" id="card-telephony">
@@ -770,16 +774,16 @@ main {
         <div>
           <div class="svc-name">Telephony Adapter</div>
           <div class="svc-state" id="state-telephony">Stopped <span class="svc-pid" id="pid-telephony"></span></div>
+          <div style="font-size:9px;color:#444;letter-spacing:0.08em;margin-top:2px">TWILIO CONVERSATIONRELAY · 8767</div>
         </div>
       </div>
       <div class="card-actions">
-        <span style="font-size:10px;color:#555;letter-spacing:0.08em;padding-right:8px">TWILIO CONVERSATIONRELAY · PORT 8767</span>
         <button class="btn btn-green" onclick="startService('telephony')">&#9654; Start</button>
         <button class="btn btn-red" onclick="stopService('telephony')">&#9632; Stop</button>
       </div>
     </div>
     <div class="log-wrap">
-      <div class="log-pane" id="log-telephony" style="height:120px"><div class="log-empty">No output yet.</div></div>
+      <div class="log-pane" id="log-telephony"><div class="log-empty">No output yet.</div></div>
     </div>
   </div>
   <!-- SETTINGS PANEL -->
@@ -816,6 +820,7 @@ main {
 
 <script>
 const SERVICES = ['orchestrator', 'client', 'hotkey', 'telephony'];
+const SVC_LABELS = { orchestrator: 'Orchestrator', client: 'Desktop Client', hotkey: 'Media Key Tap', telephony: 'Telephony' };
 const evtSources = {};
 
 function classify(line) {
@@ -867,24 +872,25 @@ function updateStatus(data) {
     const pillLed = document.getElementById('led-' + svcId);
     const pillTxt = document.getElementById('txt-' + svcId);
 
+    const label = SVC_LABELS[svcId] || svcId;
     if (info.running) {
       card.classList.add('running');
       led.classList.add('running');
       stateEl.className = 'svc-state running';
       stateEl.childNodes[0].textContent = 'Running ';
       pidEl.textContent = 'pid ' + info.pid;
-      pill.classList.add('up'); pill.classList.remove('down');
-      pillLed.className = 'led on';
-      pillTxt.textContent = svcId === 'client' ? 'Desktop Client' : 'Orchestrator';
+      if (pill) { pill.classList.add('up'); pill.classList.remove('down'); }
+      if (pillLed) pillLed.className = 'led on';
+      if (pillTxt) pillTxt.textContent = label;
     } else {
       card.classList.remove('running');
       led.classList.remove('running');
       stateEl.className = 'svc-state';
       stateEl.childNodes[0].textContent = 'Stopped ';
       pidEl.textContent = '';
-      pill.classList.remove('up'); pill.classList.add('down');
-      pillLed.className = 'led off';
-      pillTxt.textContent = svcId === 'client' ? 'Desktop Client' : 'Orchestrator';
+      if (pill) { pill.classList.remove('up'); pill.classList.add('down'); }
+      if (pillLed) pillLed.className = 'led off';
+      if (pillTxt) pillTxt.textContent = label;
     }
   }
 }
