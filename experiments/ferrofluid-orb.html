@@ -759,6 +759,27 @@ function getMicAmplitude() {
   return Math.sqrt(sum / freqData.length) / 255;
 }
 
+function updateFreqTexture() {
+  if (!analyser || !bandBins) {
+    // No mic yet — decay texture to zero
+    for (let i = 0; i < SPECTRUM_BANDS; i++) freqTexData[i] *= 0.85;
+    freqTex.needsUpdate = true;
+    return;
+  }
+  analyser.getByteFrequencyData(freqData);
+  for (let i = 0; i < SPECTRUM_BANDS; i++) {
+    const [b0, b1] = bandBins[i];
+    let sum = 0;
+    for (let b = b0; b <= b1; b++) sum += freqData[b];
+    const raw = sum / Math.max(1, b1 - b0 + 1) / 255;
+    // Asymmetric smoothing: fast attack, slow decay
+    freqTexData[i] = freqTexData[i] < raw
+      ? raw * 0.6 + freqTexData[i] * 0.4      // attack
+      : raw * 0.15 + freqTexData[i] * 0.85;   // decay
+  }
+  freqTex.needsUpdate = true;
+}
+
 initMic();
 
 let LERP_SPEED    = 0.025;
@@ -821,6 +842,7 @@ function animate() {
   orbUniforms.uEnergy.value += (energyTarget - orbUniforms.uEnergy.value) * LERP_SPEED * 3;
   lerpColor.lerp(targetColor, LERP_SPEED * 2);
   orbUniforms.uColor.value.copy(lerpColor);
+  updateFreqTexture();
   orbUniforms.uTime.value = t;
 
   // Lerp bloom
