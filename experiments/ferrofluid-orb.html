@@ -403,6 +403,98 @@
   </style>
 </head>
 <body>
+<!-- BOB UNIFIED INTERFACE OVERLAYS -->
+
+<!-- TOP BAR -->
+<div id="bob-topbar">
+  <div id="bob-brand">
+    <div id="bob-state-dot" class="idle"></div>
+    BOB
+  </div>
+
+  <button id="bob-master-btn" onclick="bobMasterToggle()">&#9654; START BOB</button>
+
+  <div id="bob-service-pills">
+    <div class="svc-pill" id="pill-stt" onclick="bobTermTab('stt')" title="STT Service">
+      <div class="svc-pill-dot"></div>STT
+    </div>
+    <div class="svc-pill" id="pill-orc" onclick="bobTermTab('orchestrator')" title="Orchestrator">
+      <div class="svc-pill-dot"></div>ORC
+    </div>
+    <div class="svc-pill" id="pill-cli" onclick="bobTermTab('client')" title="Desktop Client">
+      <div class="svc-pill-dot"></div>CLI
+    </div>
+  </div>
+</div>
+
+<!-- TERMINAL PANEL -->
+<div id="bob-terminal" style="height: calc(26vh + 34px);">
+  <div id="bob-term-header">
+    <div class="term-tab active" id="tab-stt"          onclick="bobTermTab('stt')">STT</div>
+    <div class="term-tab"        id="tab-orchestrator" onclick="bobTermTab('orchestrator')">ORC</div>
+    <div class="term-tab"        id="tab-client"       onclick="bobTermTab('client')">CLI</div>
+    <div id="bob-term-collapse" onclick="bobTermToggle()">&#8722;</div>
+  </div>
+  <div id="bob-term-body"></div>
+</div>
+
+<!-- SETTINGS DRAWER -->
+<div id="bob-settings">
+  <button id="bob-settings-toggle" onclick="bobSettingsToggle()">
+    <span>BOB SETTINGS</span>
+    <span id="bob-settings-arrow">&#9650;</span>
+  </button>
+  <div id="bob-settings-body">
+
+    <div>
+      <div class="sg-label">Voice</div>
+      <select class="sg-select" id="sg-voice">
+        <option value="27ugurx8r230xq5a0vKV" selected>Bob (Default)</option>
+        <option value="pNInz6obpgDQGcFmaJgB">Adam - American Male</option>
+        <option value="TxGEqnHWrfWFTfGW9XjX">Josh - American Male</option>
+        <option value="VR6AewLTigWG4xSOukaG">Arnold - American Male</option>
+        <option value="AZnzlk1XvdvUeBnXmlld">Domi - American Female</option>
+        <option value="MF3mGyEYCl7XYWbV9V6O">Elli - American Female</option>
+        <option value="21m00Tcm4TlvDq8ikWAM">Rachel - American Female</option>
+        <option value="D38z5RcWu1voky8WS1ja">Fin - Irish Male</option>
+      </select>
+    </div>
+
+    <div>
+      <div class="sg-label">Mic Device</div>
+      <select class="sg-select" id="sg-mic" onchange="bobSetDevice(this.value)">
+        <option value="">Default mic</option>
+      </select>
+    </div>
+
+    <div>
+      <div class="sg-label">Model</div>
+      <select class="sg-select" id="sg-model">
+        <option value="claude-haiku-4-5-20251001" selected>Haiku 4.5 - fast</option>
+        <option value="claude-sonnet-4-6">Sonnet 4.6 - balanced</option>
+        <option value="claude-opus-4-6">Opus 4.6 - flagship</option>
+      </select>
+    </div>
+
+    <div>
+      <div class="sg-label">Temperature <span class="sg-val" id="sg-temp-val">0.60</span></div>
+      <input class="sg-slider" id="sg-temp" type="range" min="0" max="1" step="0.05" value="0.6"
+             oninput="document.getElementById('sg-temp-val').textContent = parseFloat(this.value).toFixed(2)">
+    </div>
+
+    <div>
+      <div class="sg-label">Max Tokens <span class="sg-val" id="sg-tokens-val">512</span></div>
+      <input class="sg-slider" id="sg-tokens" type="range" min="128" max="2048" step="64" value="512"
+             oninput="document.getElementById('sg-tokens-val').textContent = this.value">
+    </div>
+
+    <button class="sg-btn" onclick="bobApplySettings()">Apply Settings</button>
+    <div class="sg-status" id="sg-status"></div>
+    <button class="sg-btn danger" onclick="bobClearMemory()">Clear Memory</button>
+
+  </div>
+</div>
+
 <div id="status">idle — T: think · S: speak · I: idle</div>
 <button id="ctrl-toggle">Controls</button>
 <div id="ctrl-panel">
