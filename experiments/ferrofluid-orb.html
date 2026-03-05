@@ -1683,7 +1683,9 @@ function _connectLogs(svcId) {
 
 /* Orb state driven by orchestrator WS */
 function _setOrbState(state) {
-  if (typeof window._bobSetState === 'function') window._bobSetState(state);
+  // Map 'speaking' to 'talking' to match the orb STATES object keys
+  const orbState = state === 'speaking' ? 'talking' : state;
+  if (typeof window._bobSetState === 'function') window._bobSetState(orbState);
   const dot = document.getElementById('bob-state-dot');
   if (!dot) return;
   const cls = { idle: 'idle', listening: 'listen', thinking: 'think', speaking: 'talk' }[state] || 'idle';
