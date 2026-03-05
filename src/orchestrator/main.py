@@ -99,6 +99,7 @@ class SettingsUpdate(BaseModel):
     temperature: float | None = Field(None, ge=0.0, le=1.0)
     max_tokens: int | None = Field(None, ge=1, le=4096)
     model: str | None = None
+    voice_id: str | None = None
 
 
 @app.post("/settings")
@@ -110,7 +111,12 @@ async def update_settings(body: SettingsUpdate):
         max_tokens=body.max_tokens,
         model=body.model,
     )
-    return session.get_params()
+    if body.voice_id is not None:
+        session._tts._voice_id = body.voice_id
+        logger.info("Voice updated: %s", body.voice_id)
+    params = session.get_params()
+    params["voice_id"] = session._tts._voice_id
+    return params
 
 
 @app.post("/clear-memory")

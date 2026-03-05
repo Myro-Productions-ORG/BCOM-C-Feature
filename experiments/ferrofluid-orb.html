@@ -82,9 +82,419 @@
     .sl-row input[type=range] {
       width: 100%; height: 3px; cursor: pointer; accent-color: rgba(80,140,255,0.8);
     }
+
+/* ===================================================
+   BOB UNIFIED INTERFACE - OVERLAY PANELS
+=================================================== */
+
+:root {
+  --glass-bg: rgba(3, 12, 34, 0.40);
+  --glass-border: rgba(80, 140, 255, 0.20);
+  --glass-blur: blur(14px);
+  --cyan: #00e5ff;
+  --cyan-dim: rgba(0, 229, 255, 0.45);
+  --cyan-label: rgba(100, 180, 255, 0.50);
+  --glass-red: rgba(239, 68, 68, 0.85);
+  --glass-green: rgba(34, 197, 94, 0.85);
+  --glass-amber: rgba(245, 158, 11, 0.85);
+  --glass-grey: rgba(120, 140, 160, 0.50);
+}
+
+/* TOP BAR */
+#bob-topbar {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 48px;
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border-bottom: 1px solid var(--glass-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  z-index: 200;
+  font-family: 'Courier New', monospace;
+}
+
+#bob-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--cyan);
+  font-size: 14px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+#bob-state-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--glass-grey);
+  flex-shrink: 0;
+  transition: background 0.4s, box-shadow 0.4s;
+}
+#bob-state-dot.idle   { background: #4080ff; box-shadow: 0 0 8px #4080ff; }
+#bob-state-dot.listen { background: var(--glass-green); box-shadow: 0 0 8px var(--glass-green); animation: bob-pulse 1.8s ease-in-out infinite; }
+#bob-state-dot.think  { background: var(--glass-amber); box-shadow: 0 0 8px var(--glass-amber); animation: bob-pulse 0.9s ease-in-out infinite; }
+#bob-state-dot.talk   { background: var(--glass-green); box-shadow: 0 0 12px var(--glass-green); animation: bob-pulse 0.5s ease-in-out infinite; }
+
+@keyframes bob-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.45; }
+}
+
+#bob-master-btn {
+  background: transparent;
+  border: 1px solid var(--cyan-dim);
+  color: var(--cyan);
+  font-family: 'Courier New', monospace;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 7px 22px;
+  cursor: pointer;
+  border-radius: 3px;
+  transition: background 0.15s, border-color 0.15s;
+}
+#bob-master-btn:hover { background: rgba(0, 229, 255, 0.08); border-color: var(--cyan); }
+#bob-master-btn.running {
+  border-color: rgba(239, 68, 68, 0.60);
+  color: rgba(239, 68, 68, 0.85);
+}
+#bob-master-btn.running:hover { background: rgba(239, 68, 68, 0.08); }
+
+#bob-service-pills {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.svc-pill {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border: 1px solid var(--glass-border);
+  border-radius: 3px;
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--cyan-label);
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s;
+  background: rgba(3, 12, 34, 0.30);
+}
+.svc-pill:hover { border-color: var(--cyan-dim); color: var(--cyan); }
+.svc-pill.up    { border-color: rgba(34, 197, 94, 0.35); color: var(--glass-green); }
+.svc-pill.down  { border-color: rgba(239, 68, 68, 0.30); color: rgba(239, 68, 68, 0.70); }
+
+.svc-pill-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--glass-grey);
+  flex-shrink: 0;
+}
+.svc-pill.up  .svc-pill-dot { background: var(--glass-green); box-shadow: 0 0 5px var(--glass-green); }
+.svc-pill.down .svc-pill-dot { background: var(--glass-red); }
+
+/* TERMINAL PANEL */
+#bob-terminal {
+  position: fixed;
+  bottom: 20px;
+  left: 20px;
+  width: 42vw;
+  min-width: 320px;
+  max-width: 680px;
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: 6px;
+  z-index: 200;
+  font-family: 'Courier New', monospace;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: height 0.2s;
+}
+#bob-terminal.collapsed { height: 34px !important; }
+
+#bob-term-header {
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid var(--glass-border);
+  flex-shrink: 0;
+  height: 34px;
+}
+
+.term-tab {
+  padding: 0 14px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--cyan-label);
+  cursor: pointer;
+  border-right: 1px solid var(--glass-border);
+  transition: color 0.15s, background 0.15s;
+  white-space: nowrap;
+}
+.term-tab:hover  { color: var(--cyan); background: rgba(0,229,255,0.04); }
+.term-tab.active { color: var(--cyan); border-bottom: 1px solid var(--cyan-dim); }
+
+#bob-term-collapse {
+  margin-left: auto;
+  padding: 0 12px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  font-size: 11px;
+  color: var(--cyan-label);
+  cursor: pointer;
+  border-left: 1px solid var(--glass-border);
+  transition: color 0.15s;
+}
+#bob-term-collapse:hover { color: var(--cyan); }
+
+#bob-term-body {
+  height: 26vh;
+  min-height: 140px;
+  overflow-y: auto;
+  padding: 10px 14px;
+  font-size: 10.5px;
+  line-height: 1.6;
+  color: var(--cyan);
+}
+#bob-term-body::-webkit-scrollbar { width: 3px; }
+#bob-term-body::-webkit-scrollbar-thumb { background: rgba(80,140,255,0.25); }
+
+.tlog-line { white-space: pre-wrap; word-break: break-all; margin: 0; }
+.tlog-line.err    { color: rgba(239, 68, 68, 0.85); }
+.tlog-line.warn   { color: rgba(245, 158, 11, 0.80); }
+.tlog-line.ok     { color: rgba(34, 197, 94, 0.85); }
+.tlog-line.accent { color: var(--cyan); }
+.tlog-line.dim    { color: rgba(100, 160, 220, 0.45); }
+
+/* SETTINGS DRAWER */
+#bob-settings {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 280px;
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: 6px;
+  z-index: 200;
+  font-family: 'Courier New', monospace;
+  overflow: hidden;
+}
+
+#bob-settings-toggle {
+  width: 100%;
+  padding: 9px 14px;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid transparent;
+  color: var(--cyan-dim);
+  font-family: 'Courier New', monospace;
+  font-size: 9px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  cursor: pointer;
+  text-align: left;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: color 0.15s;
+}
+#bob-settings-toggle:hover { color: var(--cyan); }
+#bob-settings-toggle.open {
+  border-bottom-color: var(--glass-border);
+  color: var(--cyan);
+}
+
+#bob-settings-body {
+  display: none;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+#bob-settings-body.open { display: flex; }
+
+.sg-label {
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--cyan-label);
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+.sg-val { color: var(--cyan); }
+
+.sg-select, .sg-slider {
+  width: 100%;
+  font-family: 'Courier New', monospace;
+  font-size: 10px;
+  background: rgba(3, 12, 34, 0.60);
+  color: var(--cyan);
+  border: 1px solid var(--glass-border);
+  border-radius: 3px;
+  padding: 6px 8px;
+  cursor: pointer;
+  letter-spacing: 0.05em;
+}
+.sg-select:focus { outline: none; border-color: var(--cyan-dim); }
+
+.sg-slider {
+  -webkit-appearance: none;
+  height: 3px;
+  padding: 0;
+  background: rgba(80,140,255,0.25);
+}
+.sg-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 13px; height: 13px;
+  border-radius: 50%;
+  background: var(--cyan);
+  cursor: pointer;
+}
+
+.sg-btn {
+  width: 100%;
+  font-family: 'Courier New', monospace;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  background: transparent;
+  border: 1px solid var(--cyan-dim);
+  color: var(--cyan);
+  padding: 8px;
+  cursor: pointer;
+  border-radius: 3px;
+  transition: background 0.15s;
+}
+.sg-btn:hover { background: rgba(0, 229, 255, 0.08); }
+
+.sg-btn.danger {
+  border-color: rgba(239,68,68,0.40);
+  color: rgba(239,68,68,0.70);
+}
+.sg-btn.danger:hover { background: rgba(239,68,68,0.08); color: var(--glass-red); }
+
+.sg-status {
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--cyan-label);
+  text-align: center;
+  min-height: 13px;
+}
+.sg-status.ok  { color: var(--glass-green); }
+.sg-status.err { color: var(--glass-red); }
   </style>
 </head>
 <body>
+<!-- BOB UNIFIED INTERFACE OVERLAYS -->
+
+<!-- TOP BAR -->
+<div id="bob-topbar">
+  <div id="bob-brand">
+    <div id="bob-state-dot" class="idle"></div>
+    BOB
+  </div>
+
+  <button id="bob-master-btn" onclick="bobMasterToggle()">&#9654; START BOB</button>
+
+  <div id="bob-service-pills">
+    <div class="svc-pill" id="pill-stt" onclick="bobTermTab('stt')" title="STT Service">
+      <div class="svc-pill-dot"></div>STT
+    </div>
+    <div class="svc-pill" id="pill-orc" onclick="bobTermTab('orchestrator')" title="Orchestrator">
+      <div class="svc-pill-dot"></div>ORC
+    </div>
+    <div class="svc-pill" id="pill-cli" onclick="bobTermTab('client')" title="Desktop Client">
+      <div class="svc-pill-dot"></div>CLI
+    </div>
+  </div>
+</div>
+
+<!-- TERMINAL PANEL -->
+<div id="bob-terminal" style="height: calc(26vh + 34px);">
+  <div id="bob-term-header">
+    <div class="term-tab active" id="tab-stt"          onclick="bobTermTab('stt')">STT</div>
+    <div class="term-tab"        id="tab-orchestrator" onclick="bobTermTab('orchestrator')">ORC</div>
+    <div class="term-tab"        id="tab-client"       onclick="bobTermTab('client')">CLI</div>
+    <div id="bob-term-collapse" onclick="bobTermToggle()">&#8722;</div>
+  </div>
+  <div id="bob-term-body"></div>
+</div>
+
+<!-- SETTINGS DRAWER -->
+<div id="bob-settings">
+  <button id="bob-settings-toggle" onclick="bobSettingsToggle()">
+    <span>BOB SETTINGS</span>
+    <span id="bob-settings-arrow">&#9650;</span>
+  </button>
+  <div id="bob-settings-body">
+
+    <div>
+      <div class="sg-label">Voice</div>
+      <select class="sg-select" id="sg-voice">
+        <option value="27ugurx8r230xq5a0vKV" selected>Bob (Default)</option>
+        <option value="pNInz6obpgDQGcFmaJgB">Adam - American Male</option>
+        <option value="TxGEqnHWrfWFTfGW9XjX">Josh - American Male</option>
+        <option value="VR6AewLTigWG4xSOukaG">Arnold - American Male</option>
+        <option value="AZnzlk1XvdvUeBnXmlld">Domi - American Female</option>
+        <option value="MF3mGyEYCl7XYWbV9V6O">Elli - American Female</option>
+        <option value="21m00Tcm4TlvDq8ikWAM">Rachel - American Female</option>
+        <option value="D38z5RcWu1voky8WS1ja">Fin - Irish Male</option>
+      </select>
+    </div>
+
+    <div>
+      <div class="sg-label">Mic Device</div>
+      <select class="sg-select" id="sg-mic" onchange="bobSetDevice(this.value)">
+        <option value="">Default mic</option>
+      </select>
+    </div>
+
+    <div>
+      <div class="sg-label">Model</div>
+      <select class="sg-select" id="sg-model">
+        <option value="claude-haiku-4-5-20251001" selected>Haiku 4.5 - fast</option>
+        <option value="claude-sonnet-4-6">Sonnet 4.6 - balanced</option>
+        <option value="claude-opus-4-6">Opus 4.6 - flagship</option>
+      </select>
+    </div>
+
+    <div>
+      <div class="sg-label">Temperature <span class="sg-val" id="sg-temp-val">0.60</span></div>
+      <input class="sg-slider" id="sg-temp" type="range" min="0" max="1" step="0.05" value="0.6"
+             oninput="document.getElementById('sg-temp-val').textContent = parseFloat(this.value).toFixed(2)">
+    </div>
+
+    <div>
+      <div class="sg-label">Max Tokens <span class="sg-val" id="sg-tokens-val">512</span></div>
+      <input class="sg-slider" id="sg-tokens" type="range" min="128" max="2048" step="64" value="512"
+             oninput="document.getElementById('sg-tokens-val').textContent = this.value">
+    </div>
+
+    <button class="sg-btn" onclick="bobApplySettings()">Apply Settings</button>
+    <div class="sg-status" id="sg-status"></div>
+    <button class="sg-btn danger" onclick="bobClearMemory()">Clear Memory</button>
+
+  </div>
+</div>
+
 <div id="status">idle — T: think · S: speak · I: idle</div>
 <button id="ctrl-toggle">Controls</button>
 <div id="ctrl-panel">
@@ -716,6 +1126,7 @@ function setState(name) {
     name === 'thinking'  ? 'thinking...' :
                            'speaking...';
 }
+  window._bobSetState = setState;
 
 window.addEventListener('keydown', (e) => {
   const k = e.key.toLowerCase();
@@ -1109,6 +1520,275 @@ document.getElementById('file-import').addEventListener('change', e => {
 // Load exported config if present (injected by export)
 if (window.BOB_CONFIG) applyConfig(window.BOB_CONFIG);
 
+</script>
+<script>
+/* BOB UNIFIED INTERFACE - OVERLAY LOGIC
+   Talks to process-manager on port 7766 */
+
+const BOB_API = 'http://127.0.0.1:7766';
+const ORC_WS  = 'ws://127.0.0.1:8766/ws/control';
+
+let _bobRunning    = false;
+let _termActive    = 'stt';
+let _termCollapsed = false;
+let _evtSources    = {};
+let _orbWs         = null;
+
+const _tabLogs  = { stt: [], orchestrator: [], client: [] };
+const _tabPills = { stt: 'pill-stt', orchestrator: 'pill-orc', client: 'pill-cli' };
+
+/* Log helpers */
+function _classify(line) {
+  const l = line.toLowerCase();
+  if (l.includes('error') || l.includes('fatal') || l.includes('traceback')) return 'err';
+  if (l.includes('warn') || l.includes('failed') || l.includes('401')) return 'warn';
+  if (l.includes('ready') || l.includes('connected') || l.includes('running on')) return 'ok';
+  if (l.includes('bob:') || l.includes('transcript') || l.includes('speaking') || l.includes('thinking')) return 'accent';
+  return 'dim';
+}
+
+function _appendLog(tabId, line) {
+  const buf = _tabLogs[tabId];
+  if (!buf) return;
+  const cls = _classify(line);
+  buf.push({ line, cls });
+  if (buf.length > 400) buf.shift();
+  if (tabId === _termActive) _renderLogLine(line, cls);
+
+  /* Drive orb thinking/speaking state from orchestrator log */
+  if (tabId === 'orchestrator') {
+    const l = line.toLowerCase();
+    if (l.includes('session state: thinking')) _setOrbState('thinking');
+    if (l.includes('session state: speaking')) _setOrbState('speaking');
+    if (l.includes('session state: listening')) _setOrbState('listening');
+  }
+}
+
+function _renderLogLine(line, cls) {
+  const body = document.getElementById('bob-term-body');
+  const el   = document.createElement('p');
+  el.className = 'tlog-line ' + cls;
+  el.textContent = line;
+  body.appendChild(el);
+  while (body.children.length > 400) body.removeChild(body.firstChild);
+  body.scrollTop = body.scrollHeight;
+}
+
+function _redrawLogs() {
+  const body = document.getElementById('bob-term-body');
+  while (body.firstChild) body.removeChild(body.firstChild);
+  (_tabLogs[_termActive] || []).forEach(({ line, cls }) => _renderLogLine(line, cls));
+}
+
+/* Terminal tabs */
+function bobTermTab(tabId) {
+  _termActive = tabId;
+  ['stt', 'orchestrator', 'client'].forEach(id => {
+    document.getElementById('tab-' + id)?.classList.toggle('active', id === tabId);
+  });
+  _redrawLogs();
+}
+
+function bobTermToggle() {
+  _termCollapsed = !_termCollapsed;
+  document.getElementById('bob-terminal').classList.toggle('collapsed', _termCollapsed);
+  document.getElementById('bob-term-collapse').textContent = _termCollapsed ? '+' : '-';
+}
+
+/* Settings drawer */
+function bobSettingsToggle() {
+  const body   = document.getElementById('bob-settings-body');
+  const toggle = document.getElementById('bob-settings-toggle');
+  const arrow  = document.getElementById('bob-settings-arrow');
+  const open   = body.classList.toggle('open');
+  toggle.classList.toggle('open', open);
+  arrow.textContent = open ? '\u25BC' : '\u25B2';
+}
+
+/* Service pills */
+function _setPill(svcKey, up) {
+  const pill = document.getElementById(_tabPills[svcKey]);
+  if (!pill) return;
+  pill.classList.toggle('up',   up === true);
+  pill.classList.toggle('down', up === false);
+}
+
+async function _pollStatus() {
+  try {
+    const r  = await fetch(BOB_API + '/api/status');
+    const d  = await r.json();
+    _setPill('orchestrator', d.orchestrator?.running);
+    _setPill('client',       d.client?.running);
+    _setBobRunning(d.orchestrator?.running || d.client?.running);
+  } catch { /* process-manager offline */ }
+
+  try {
+    const r = await fetch(BOB_API + '/api/stt-health');
+    const d = await r.json();
+    _setPill('stt', d.up);
+  } catch { _setPill('stt', false); }
+}
+
+/* Master button */
+function _setBobRunning(running) {
+  _bobRunning = !!running;
+  const btn = document.getElementById('bob-master-btn');
+  if (_bobRunning) {
+    btn.textContent = '\u25A0 STOP BOB';
+    btn.classList.add('running');
+  } else {
+    btn.textContent = '\u25B6 START BOB';
+    btn.classList.remove('running');
+  }
+}
+
+async function bobMasterToggle() {
+  if (_bobRunning) { await _stopAll(); } else { await _startAll(); }
+}
+
+async function _startAll() {
+  _appendLog('orchestrator', '[ctrl] starting orchestrator...');
+  await fetch(BOB_API + '/api/start/orchestrator', { method: 'POST' });
+  _connectLogs('orchestrator');
+  await new Promise(r => setTimeout(r, 1500));
+
+  _appendLog('client', '[ctrl] starting desktop client...');
+  await fetch(BOB_API + '/api/start/client', { method: 'POST' });
+  _connectLogs('client');
+  await new Promise(r => setTimeout(r, 500));
+
+  await fetch(BOB_API + '/api/start/hotkey', { method: 'POST' });
+  setTimeout(_pollStatus, 800);
+  setTimeout(_connectOrbWs, 2000);
+}
+
+async function _stopAll() {
+  if (_orbWs) { try { _orbWs.close(); } catch {} _orbWs = null; }
+  await fetch(BOB_API + '/api/stop/hotkey',      { method: 'POST' });
+  await fetch(BOB_API + '/api/stop/client',       { method: 'POST' });
+  await fetch(BOB_API + '/api/stop/orchestrator', { method: 'POST' });
+  _appendLog('orchestrator', '[ctrl] all services stopped');
+  setTimeout(_pollStatus, 400);
+  _setOrbState('idle');
+}
+
+/* Log streaming via SSE */
+function _connectLogs(svcId) {
+  if (_evtSources[svcId]) _evtSources[svcId].close();
+  const es = new EventSource(BOB_API + '/api/logs/' + svcId);
+  es.onmessage = e => _appendLog(svcId, JSON.parse(e.data));
+  es.onerror   = () => _appendLog(svcId, '[stream] log stream disconnected');
+  _evtSources[svcId] = es;
+}
+
+/* Orb state driven by orchestrator WS */
+function _setOrbState(state) {
+  // Map 'speaking' to 'talking' to match the orb STATES object keys
+  const orbState = state === 'speaking' ? 'talking' : state;
+  if (typeof window._bobSetState === 'function') window._bobSetState(orbState);
+  const dot = document.getElementById('bob-state-dot');
+  if (!dot) return;
+  const cls = { idle: 'idle', listening: 'listen', thinking: 'think', speaking: 'talk' }[state] || 'idle';
+  dot.className = cls;
+}
+
+function _connectOrbWs() {
+  if (_orbWs) { try { _orbWs.close(); } catch {} }
+  const ws = new WebSocket(ORC_WS);
+  ws.onopen    = () => { _appendLog('orchestrator', '[ws] connected to orchestrator'); _setOrbState('listening'); };
+  ws.onmessage = e => {
+    try {
+      const msg = JSON.parse(e.data);
+      if (msg.type === 'tts_start') _setOrbState('speaking');
+      if (msg.type === 'tts_stop')  _setOrbState('listening');
+    } catch {}
+  };
+  ws.onclose = () => { _appendLog('orchestrator', '[ws] orchestrator WS closed'); _setOrbState('idle'); _orbWs = null; };
+  _orbWs = ws;
+}
+
+/* Settings */
+async function bobSetDevice(device) {
+  try {
+    await fetch(BOB_API + '/api/set-device', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ device }),
+    });
+  } catch {}
+}
+
+async function bobApplySettings() {
+  const statusEl = document.getElementById('sg-status');
+  statusEl.className = 'sg-status';
+  statusEl.textContent = 'Applying...';
+  const payload = {
+    temperature: parseFloat(document.getElementById('sg-temp').value),
+    max_tokens:  parseInt(document.getElementById('sg-tokens').value, 10),
+    model:       document.getElementById('sg-model').value,
+    voice_id:    document.getElementById('sg-voice').value,
+  };
+  try {
+    const r = await fetch(BOB_API + '/api/settings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const d = await r.json();
+    if (d.error) throw new Error(d.error);
+    statusEl.className = 'sg-status ok';
+    statusEl.textContent = 'Applied';
+    setTimeout(() => { statusEl.textContent = ''; }, 2500);
+  } catch {
+    statusEl.className = 'sg-status err';
+    statusEl.textContent = 'Failed - orchestrator running?';
+  }
+}
+
+async function bobClearMemory() {
+  const statusEl = document.getElementById('sg-status');
+  statusEl.className = 'sg-status';
+  statusEl.textContent = 'Clearing...';
+  try {
+    const r = await fetch(BOB_API + '/api/clear-memory', { method: 'POST' });
+    const d = await r.json();
+    if (d.error) throw new Error(d.error);
+    statusEl.className = 'sg-status ok';
+    statusEl.textContent = 'Memory cleared';
+    setTimeout(() => { statusEl.textContent = ''; }, 2500);
+  } catch {
+    statusEl.className = 'sg-status err';
+    statusEl.textContent = 'Failed - orchestrator running?';
+  }
+}
+
+/* Mic device list */
+async function _loadDevices() {
+  try {
+    const r = await fetch(BOB_API + '/api/devices');
+    const { devices } = await r.json();
+    const sel = document.getElementById('sg-mic');
+    while (sel.options.length > 1) sel.remove(1);
+    devices.forEach(d => {
+      const opt = document.createElement('option');
+      opt.value = d;
+      opt.textContent = d;
+      if (d.toLowerCase().includes('meta') || d.toLowerCase().includes('rb meta')) {
+        opt.selected = true;
+        bobSetDevice(d);
+      }
+      sel.appendChild(opt);
+    });
+  } catch {}
+}
+
+/* Init */
+window.addEventListener('DOMContentLoaded', () => {
+  _pollStatus();
+  _loadDevices();
+  ['orchestrator', 'client'].forEach(_connectLogs);
+  setInterval(_pollStatus, 3000);
+});
 </script>
 </body>
 </html>
