@@ -1126,6 +1126,7 @@ function setState(name) {
     name === 'thinking'  ? 'thinking...' :
                            'speaking...';
 }
+  window._bobSetState = setState;
 
 window.addEventListener('keydown', (e) => {
   const k = e.key.toLowerCase();
