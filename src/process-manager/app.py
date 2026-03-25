@@ -11,7 +11,8 @@ from typing import AsyncGenerator
 
 import httpx
 from fastapi import FastAPI
-from fastapi.responses import HTMLResponse, StreamingResponse
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse, HTMLResponse, StreamingResponse
 import uvicorn
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -98,6 +99,13 @@ def _reader_thread(svc_id: str, proc: subprocess.Popen) -> None:
 
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 @app.on_event("startup")
@@ -1051,6 +1059,11 @@ setInterval(updateSttHealth, 10000);
 @app.get("/")
 async def index():
     return HTMLResponse(HTML)
+
+
+@app.get("/orb")
+async def orb():
+    return FileResponse(str(REPO_ROOT / "experiments/ferrofluid-orb.html"), media_type="text/html")
 
 
 if __name__ == "__main__":

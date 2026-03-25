@@ -16,6 +16,8 @@
         <string>ExitOnForwardFailure=yes</string>
         <string>-o</string>
         <string>StrictHostKeyChecking=no</string>
+        <string>-i</string>
+        <string>/Users/myro-pro/.ssh/id_ed25519</string>
         <string>-L</string>
         <string>8765:localhost:8765</string>
         <string>linux-desktop</string>
